@@ -1,0 +1,47 @@
+# Build directories
+build/
+debug/
+release/
+*.exe
+
+# Scripts directory (keep scripts in repo, ignore only if needed)
+# scripts/ - не игнорируем, скрипты должны быть в репозитории
+
+# Qt / qmake
+*.pro.user
+*.pro.user.*
+*.qmlc
+*.jsc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.autosave
+Makefile
+Makefile.Debug
+Makefile.Release
+object_script.*.Release
+object_script.*.Debug
+*_plugin_import.cpp
+/.qmake.cache
+/.qmake.stash
+*_qmlcache.qrc
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
