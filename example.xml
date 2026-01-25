@@ -1,0 +1,427 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Symbolconfiguration>
+  <Header>
+    <ProjectInfo name="KSN_09" devicename="PLC" appname="PLC" devType="1" />
+  </Header>
+  <TypeList>
+    <TypeSimple name="T_BOOL" iecname="BOOL" typeclass="BOOL" size="2" swapsize="2" />
+    <TypeSimple name="T_COUNTER" iecname="COUNTER" typeclass="COUNTER" size="2" swapsize="2" />
+    <TypeSimple name="T_REAL" iecname="REAL" typeclass="REAL" size="4" swapsize="4" />
+    <TypeSimple name="T_WORD" iecname="WORD" typeclass="WORD" size="2" swapsize="2" />
+    <TypeSimple name="T_INT" iecname="INT" typeclass="INT" size="2" swapsize="2" />
+    <TypeArray name="T_ARRAY__0__3__OF_REAL" iecname="ARRAY [0..3] OF REAL" typeclass="Array" basetype="T_REAL" size="16" swapsize="16">
+      <ArrayDim minrange="0" maxrange="3" />
+    </TypeArray>
+    <TypeArray name="T_ARRAY__0__9__OF_PassPar_r" iecname="ARRAY [0..9] OF PassPar_r" typeclass="Array" basetype="T_PassPar_r" size="520" swapsize="520">
+      <ArrayDim minrange="0" maxrange="9" />
+    </TypeArray>
+    <TypeUserDef name="T_WeldingPar_t" iecname="WeldingPar_t" pouclass="STRUCTURE" typeclass="Userdef" size="12" swapsize="12">
+      <UserDefElement iecname="Voltage" type="T_REAL" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="WireSpeed" type="T_REAL" vartype="VAR" byteoffset="4" />
+      <UserDefElement iecname="WeldingSpeed" type="T_REAL" vartype="VAR" byteoffset="8" />
+    </TypeUserDef>
+    <TypeUserDef name="T_MPKPar_t" iecname="MPKPar_t" pouclass="STRUCTURE" typeclass="Userdef" size="16" swapsize="16">
+      <UserDefElement iecname="A" type="T_REAL" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="V" type="T_REAL" vartype="VAR" byteoffset="4" />
+      <UserDefElement iecname="TL" type="T_REAL" vartype="VAR" byteoffset="8" />
+      <UserDefElement iecname="TR" type="T_REAL" vartype="VAR" byteoffset="12" />
+    </TypeUserDef>
+    <TypeUserDef name="T_TrajectoryPar_t" iecname="TrajectoryPar_t" pouclass="STRUCTURE" typeclass="Userdef" size="24" swapsize="24">
+      <UserDefElement iecname="HorStep" type="T_REAL" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="VertStep" type="T_REAL" vartype="VAR" byteoffset="4" />
+      <UserDefElement iecname="Reserve1" type="T_REAL" vartype="VAR" byteoffset="8" />
+      <UserDefElement iecname="Reserve2" type="T_REAL" vartype="VAR" byteoffset="12" />
+      <UserDefElement iecname="Reserve3" type="T_REAL" vartype="VAR" byteoffset="16" />
+      <UserDefElement iecname="Reserve4" type="T_REAL" vartype="VAR" byteoffset="20" />
+    </TypeUserDef>
+    <TypeUserDef name="T_PassPar_r" iecname="PassPar_r" pouclass="STRUCTURE" typeclass="Userdef" size="52" swapsize="52">
+      <UserDefElement iecname="Welding" type="T_WeldingPar_t" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="MPK" type="T_MPKPar_t" vartype="VAR" byteoffset="12" />
+      <UserDefElement iecname="Trajectory" type="T_TrajectoryPar_t" vartype="VAR" byteoffset="28" />
+    </TypeUserDef>
+    <TypeUserDef name="T_Coordinate_t" iecname="Coordinate_t" pouclass="STRUCTURE" typeclass="Userdef" size="12" swapsize="12">
+      <UserDefElement iecname="Hor" type="T_REAL" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="Vert" type="T_REAL" vartype="VAR" byteoffset="4" />
+      <UserDefElement iecname="Angle" type="T_REAL" vartype="VAR" byteoffset="8" />
+    </TypeUserDef>
+    <TypeUserDef name="T_Calibr_t" iecname="Calibr_t" pouclass="STRUCTURE" typeclass="Userdef" size="16" swapsize="16">
+      <UserDefElement iecname="ADC1" type="T_REAL" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="Value1" type="T_REAL" vartype="VAR" byteoffset="4" />
+      <UserDefElement iecname="ADC2" type="T_REAL" vartype="VAR" byteoffset="8" />
+      <UserDefElement iecname="Value2" type="T_REAL" vartype="VAR" byteoffset="12" />
+    </TypeUserDef>
+    <TypeUserDef name="T_BeginEndPar_t" iecname="BeginEndPar_t" pouclass="STRUCTURE" typeclass="Userdef" size="8" swapsize="8">
+      <UserDefElement iecname="GasBefore" type="T_INT" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="GasAfter" type="T_INT" vartype="VAR" byteoffset="2" />
+      <UserDefElement iecname="RunAxisDelay" type="T_INT" vartype="VAR" byteoffset="4" />
+      <UserDefElement iecname="WeldingOffDelay" type="T_INT" vartype="VAR" byteoffset="6" />
+    </TypeUserDef>
+    <TypeUserDef name="T_Parameters_t" iecname="Parameters_t" pouclass="STRUCTURE" typeclass="Userdef" size="544" swapsize="544">
+      <UserDefElement iecname="BeginEnd" type="T_BeginEndPar_t" vartype="VAR" byteoffset="0" />
+      <UserDefElement iecname="Diameter" type="T_REAL" vartype="VAR" byteoffset="8" />
+      <UserDefElement iecname="Reserve1" type="T_REAL" vartype="VAR" byteoffset="12" />
+      <UserDefElement iecname="Reserve2" type="T_REAL" vartype="VAR" byteoffset="16" />
+      <UserDefElement iecname="Reserve3" type="T_INT" vartype="VAR" byteoffset="20" />
+      <UserDefElement iecname="PassNumber" type="T_INT" vartype="VAR" byteoffset="22" />
+      <UserDefElement iecname="Pass" type="T_ARRAY__0__9__OF_PassPar_r" vartype="VAR" byteoffset="24" />
+    </TypeUserDef>
+  </TypeList>
+  <NodeList>
+    <Node name="PLC" nodeflags="NonAccessibleName">
+      <Node name="Default_Tag_Table" nodeflags="NonAccessibleName" />
+      <Node name="CANopen_Tag_Table" nodeflags="NonAccessibleName" />
+      <Node name="C_Tag_Table" nodeflags="NonAccessibleName" />
+      <Node name="IN" nodeflags="NonAccessibleName">
+        <Node name="In_LimL" type="T_BOOL" access="ReadWrite" directaddress="X0.2">
+          <Comment>Концевик влево</Comment>
+        </Node>
+        <Node name="In_LimR" type="T_BOOL" access="ReadWrite" directaddress="X0.3">
+          <Comment>Концевик вправо</Comment>
+        </Node>
+        <Node name="In_LimUp" type="T_BOOL" access="ReadWrite" directaddress="X0.4">
+          <Comment>Концевик вверх</Comment>
+        </Node>
+        <Node name="In_LimDown" type="T_BOOL" access="ReadWrite" directaddress="X0.5">
+          <Comment>Концевик вниз</Comment>
+        </Node>
+        <Node name="In_IGRO" type="T_BOOL" access="ReadWrite" directaddress="X0.6" />
+        <Node name="In_LimTiltUp" type="T_BOOL" access="ReadWrite" directaddress="X0.8" />
+        <Node name="In_LimTiltDown" type="T_BOOL" access="ReadWrite" directaddress="X0.9" />
+        <Node name="In_Toch" type="T_BOOL" access="ReadWrite" directaddress="X0.7" />
+        <Node name="In_AlarmPower" type="T_BOOL" access="ReadWrite" directaddress="X2.4" />
+        <Node name="In_AlarmUZ1" type="T_BOOL" access="ReadWrite" directaddress="X0.10">
+          <Comment>Авария привода UZ1</Comment>
+        </Node>
+        <Node name="In_AlarmUZ2" type="T_BOOL" access="ReadWrite" directaddress="X0.11">
+          <Comment>Авария привода UZ2</Comment>
+        </Node>
+        <Node name="In_AlarmUZ3" type="T_BOOL" access="ReadWrite" directaddress="X0.12">
+          <Comment>Авария привода UZ3</Comment>
+        </Node>
+        <Node name="In_AlarmUZ4" type="T_BOOL" access="ReadWrite" directaddress="X0.13">
+          <Comment>Авария привода UZ5</Comment>
+        </Node>
+        <Node name="In_Drive" type="T_BOOL" access="ReadWrite" directaddress="X0.15">
+          <Comment>Привод</Comment>
+        </Node>
+        <Node name="In_StartStop" type="T_BOOL" access="ReadWrite" directaddress="X1.0">
+          <Comment>Старт/Стоп</Comment>
+        </Node>
+        <Node name="In_Up" type="T_BOOL" access="ReadWrite" directaddress="X1.3">
+          <Comment>Джойстик вверх</Comment>
+        </Node>
+        <Node name="In_Down" type="T_BOOL" access="ReadWrite" directaddress="X1.4">
+          <Comment>Джойстик вниз</Comment>
+        </Node>
+        <Node name="In_L" type="T_BOOL" access="ReadWrite" directaddress="X1.5">
+          <Comment>Джойстик влево</Comment>
+        </Node>
+        <Node name="In_R" type="T_BOOL" access="ReadWrite" directaddress="X1.6">
+          <Comment>Джойстик вправо</Comment>
+        </Node>
+        <Node name="In_SelectU" type="T_BOOL" access="ReadWrite" directaddress="X2.0" />
+        <Node name="In_SelectVWelding" type="T_BOOL" access="ReadWrite" directaddress="X2.1">
+          <Comment>Выбор скорость сварки</Comment>
+        </Node>
+        <Node name="In_GasTest" type="T_BOOL" access="ReadWrite" directaddress="X2.2">
+          <Comment>Выбор проволока</Comment>
+        </Node>
+        <Node name="In_WireTest" type="T_BOOL" access="ReadWrite" directaddress="X2.3" />
+        <Node name="In_SelectRotary" type="T_BOOL" access="ReadWrite" directaddress="X1.7">
+          <Comment>Выбор вращатель</Comment>
+        </Node>
+        <Node name="In_Speed2" type="T_BOOL" access="ReadWrite" directaddress="X1.1" />
+        <Node name="In_Speed3" type="T_BOOL" access="ReadWrite" directaddress="X1.2" />
+      </Node>
+      <Node name="OUT" nodeflags="NonAccessibleName">
+        <Node name="Out_AlarmRst" type="T_BOOL" access="ReadWrite" directaddress="Y0.15">
+          <Comment>Сброс ошибок</Comment>
+        </Node>
+        <Node name="Out_HLWeldingRun" type="T_BOOL" access="ReadWrite" directaddress="Y1.3">
+          <Comment>Лампа сварка пуск</Comment>
+        </Node>
+        <Node name="Out_Drive" type="T_BOOL" access="ReadWrite" directaddress="Y0.14">
+          <Comment>Привод</Comment>
+        </Node>
+        <Node name="Out_WeldingRun" type="T_BOOL" access="ReadWrite" directaddress="Y1.0" />
+        <Node name="Out_Wire" type="T_BOOL" access="ReadWrite" directaddress="Y1.5" />
+        <Node name="Out_Pulse" type="T_BOOL" access="ReadWrite" directaddress="Y1.6" />
+        <Node name="Out_Gas" type="T_BOOL" access="ReadWrite" directaddress="Y1.1" />
+        <Node name="Out_PowerAlarmRst" type="T_BOOL" access="ReadWrite" directaddress="Y1.2" />
+      </Node>
+      <Node name="COUNT" nodeflags="NonAccessibleName">
+        <Node name="Cnt_Encoder" type="T_COUNTER" access="ReadWrite" directaddress="HC202" />
+      </Node>
+      <Node name="ADC" nodeflags="NonAccessibleName">
+        <Node name="ADC1" type="T_REAL" access="ReadWrite" directaddress="D28042" />
+        <Node name="ADC2" type="T_REAL" access="ReadWrite" directaddress="D28044" />
+        <Node name="ADC3" type="T_REAL" access="ReadWrite" directaddress="D28046" />
+        <Node name="ADC4" type="T_REAL" access="ReadWrite" directaddress="D28048" />
+        <Node name="DAC1" type="T_REAL" access="ReadWrite" directaddress="D28050" />
+        <Node name="DAC2" type="T_REAL" access="ReadWrite" directaddress="D28052" />
+      </Node>
+      <Node name="HMI" nodeflags="NonAccessibleName">
+        <Node name="Alarm" type="T_BOOL" access="ReadWrite" directaddress="M0">
+          <Comment>Авария</Comment>
+        </Node>
+        <Node name="Angle" type="T_REAL" access="ReadWrite" directaddress="D100">
+          <Comment>Угол поворота</Comment>
+        </Node>
+        <Node name="Angle360" type="T_REAL" access="ReadWrite" directaddress="D102">
+          <Comment>Угол поворота </Comment>
+        </Node>
+        <Node name="AngleNotNull" type="T_BOOL" access="ReadWrite" directaddress="M1">
+          <Comment>Угол не 0</Comment>
+        </Node>
+        <Node name="AngleRst" type="T_BOOL" access="ReadWrite" directaddress="M2">
+          <Comment>Сброс угла поворота</Comment>
+        </Node>
+        <Node name="Btn0Deg" type="T_BOOL" access="ReadWrite" directaddress="M4">
+          <Comment>Кнопка поворот в 0 градусов</Comment>
+        </Node>
+        <Node name="BtnBrakePos" type="T_BOOL" access="ReadWrite" directaddress="M6">
+          <Comment>Кнопка выход в прерванную позицию</Comment>
+        </Node>
+        <Node name="BtnDrive" type="T_BOOL" access="ReadWrite" directaddress="M7">
+          <Comment>Кнопка привод</Comment>
+        </Node>
+        <Node name="BtnDriveState" type="T_WORD" access="ReadWrite" directaddress="D106">
+          <Comment>Состояние кнопки привод</Comment>
+        </Node>
+        <Node name="BtnMPKAMinus" type="T_BOOL" access="ReadWrite" directaddress="M15" />
+        <Node name="BtnMPKAPlus" type="T_BOOL" access="ReadWrite" directaddress="M16" />
+        <Node name="BtnMPKTLMinus" type="T_BOOL" access="ReadWrite" directaddress="M17" />
+        <Node name="BtnMPKTLPlus" type="T_BOOL" access="ReadWrite" directaddress="M18" />
+        <Node name="BtnMPKTRMinus" type="T_BOOL" access="ReadWrite" directaddress="M19" />
+        <Node name="BtnMPKTRPlus" type="T_BOOL" access="ReadWrite" directaddress="M20" />
+        <Node name="BtnMPKVMinus" type="T_BOOL" access="ReadWrite" directaddress="M21" />
+        <Node name="BtnMPKVPlus" type="T_BOOL" access="ReadWrite" directaddress="M22" />
+        <Node name="BtnNextPass" type="T_BOOL" access="ReadWrite" directaddress="M23" />
+        <Node name="BtnParkingPosition" type="T_BOOL" access="ReadWrite" directaddress="M24">
+          <Comment>Кнопка парковочная позиция</Comment>
+        </Node>
+        <Node name="BtnPrevPass" type="T_BOOL" access="ReadWrite" directaddress="M25" />
+        <Node name="BtnStartPosition" type="T_BOOL" access="ReadWrite" directaddress="M26">
+          <Comment>Кнопка стартовая позиция</Comment>
+        </Node>
+        <Node name="BtnTest" type="T_BOOL" access="ReadWrite" directaddress="M27">
+          <Comment>Кнопка тест</Comment>
+        </Node>
+        <Node name="BtnUMinus" type="T_BOOL" access="ReadWrite" directaddress="M31">
+          <Comment>Кнопка Напряжение -</Comment>
+        </Node>
+        <Node name="BtnUPlus" type="T_BOOL" access="ReadWrite" directaddress="M32">
+          <Comment>Кнопка напряжение +</Comment>
+        </Node>
+        <Node name="BtnVWeldingMinus" type="T_BOOL" access="ReadWrite" directaddress="M33">
+          <Comment>Кнопка скорость сварки -</Comment>
+        </Node>
+        <Node name="BtnVWeldingPlus" type="T_BOOL" access="ReadWrite" directaddress="M34">
+          <Comment>Кнопка скорость сварки +</Comment>
+        </Node>
+        <Node name="BtnVWireMinus" type="T_BOOL" access="ReadWrite" directaddress="M35">
+          <Comment>Кнопка скорость проволоки -</Comment>
+        </Node>
+        <Node name="BtnVWirePlus" type="T_BOOL" access="ReadWrite" directaddress="M36">
+          <Comment>Кнопка скорость проволоки +</Comment>
+        </Node>
+        <Node name="Buffer" type="T_ARRAY__0__3__OF_REAL" access="ReadWrite" directaddress="D107" />
+        <Node name="BufferCicle" type="T_WORD" access="ReadWrite" directaddress="D115" />
+        <Node name="BufferSample" type="T_WORD" access="ReadWrite" directaddress="D117" />
+        <Node name="BufferSave" type="T_BOOL" access="ReadWrite" directaddress="M38" />
+        <Node name="Cicle" type="T_BOOL" access="ReadWrite" directaddress="M39">
+          <Comment>Цикл сварки</Comment>
+        </Node>
+        <Node name="CicleOrTest" type="T_BOOL" access="ReadWrite" directaddress="M40">
+          <Comment>Цикл или тест</Comment>
+        </Node>
+        <Node name="FixBegin" type="T_BOOL" access="ReadWrite" directaddress="M41">
+          <Comment>Фиксировать начальные координаты</Comment>
+        </Node>
+        <Node name="FixCoordinate" type="T_BOOL" access="ReadWrite" directaddress="M42">
+          <Comment>Фиксировать координаты</Comment>
+        </Node>
+        <Node name="FixEnd" type="T_BOOL" access="ReadWrite" directaddress="M51">
+          <Comment>Фиксировать конечные координаты</Comment>
+        </Node>
+        <Node name="FixParking" type="T_BOOL" access="ReadWrite" directaddress="M60">
+          <Comment>Фиксировать координаты парковки</Comment>
+        </Node>
+        <Node name="GotoBrake" type="T_BOOL" access="ReadWrite" directaddress="M62">
+          <Comment>Выход в прерванную позицию</Comment>
+        </Node>
+        <Node name="GotoParking" type="T_BOOL" access="ReadWrite" directaddress="M67">
+          <Comment>Выход в зону парковки</Comment>
+        </Node>
+        <Node name="GotoStart" type="T_BOOL" access="ReadWrite" directaddress="M68">
+          <Comment>Выход в зону старта</Comment>
+        </Node>
+        <Node name="HorAbs" type="T_REAL" access="ReadWrite" directaddress="D120">
+          <Comment>Абсолютная координата по горизонтали</Comment>
+        </Node>
+        <Node name="HorRel" type="T_REAL" access="ReadWrite" directaddress="D122">
+          <Comment>Относительная координата по горизонтали</Comment>
+        </Node>
+        <Node name="IMeasure" type="T_REAL" access="ReadWrite" directaddress="D126">
+          <Comment>Ток измеренный</Comment>
+        </Node>
+        <Node name="MoveAlongTilt" type="T_BOOL" access="ReadWrite" directaddress="M69">
+          <Comment>Движение вдоль наклона</Comment>
+        </Node>
+        <Node name="Rot0Deg" type="T_BOOL" access="ReadWrite" directaddress="M70">
+          <Comment>Возвращение в 0 град</Comment>
+        </Node>
+        <Node name="RotRPM" type="T_REAL" access="ReadWrite" directaddress="D140">
+          <Comment>Частота вращения</Comment>
+        </Node>
+        <Node name="RotSetDeg" type="T_BOOL" access="ReadWrite" directaddress="M71">
+          <Comment>Поворот в заданную позицию</Comment>
+        </Node>
+        <Node name="State" type="T_WORD" access="ReadWrite" directaddress="D143">
+          <Comment>Состояние</Comment>
+        </Node>
+        <Node name="SteppPlane" type="T_REAL" access="ReadWrite" directaddress="D148" />
+        <Node name="TechnologMode" type="T_BOOL" access="ReadWrite" directaddress="M75">
+          <Comment>Режим технолога</Comment>
+        </Node>
+        <Node name="Test" type="T_BOOL" access="ReadWrite" directaddress="M76">
+          <Comment>Тест</Comment>
+        </Node>
+        <Node name="TimeWelding" type="T_WORD" access="ReadWrite" directaddress="D154">
+          <Comment>Время наплавки</Comment>
+        </Node>
+        <Node name="UMaxCurr" type="T_REAL" access="ReadWrite" directaddress="D155" />
+        <Node name="UMeasure" type="T_REAL" access="ReadWrite" directaddress="D157">
+          <Comment>Напряжение измеренное</Comment>
+        </Node>
+        <Node name="UMinCurr" type="T_REAL" access="ReadWrite" directaddress="D159" />
+        <Node name="VertAbs" type="T_REAL" access="ReadWrite" directaddress="D161">
+          <Comment>Абсолютная координата по вертикали</Comment>
+        </Node>
+        <Node name="VertRel" type="T_REAL" access="ReadWrite" directaddress="D163">
+          <Comment>Относительная координата по вертикали</Comment>
+        </Node>
+        <Node name="VWeldingMaxCurr" type="T_REAL" access="ReadWrite" directaddress="D165" />
+        <Node name="VWeldingMinCurr" type="T_REAL" access="ReadWrite" directaddress="D167" />
+        <Node name="VWireMaxCurr" type="T_REAL" access="ReadWrite" directaddress="D169" />
+        <Node name="VWireMinCurr" type="T_REAL" access="ReadWrite" directaddress="D171" />
+        <Node name="HorRstRel" type="T_BOOL" access="ReadWrite" directaddress="M87">
+          <Comment>Сброс относительной координаты по горизонтали</Comment>
+        </Node>
+        <Node name="VertRstRel" type="T_BOOL" access="ReadWrite" directaddress="M88">
+          <Comment>Сброс относительной координаты по вертикали</Comment>
+        </Node>
+        <Node name="TiltAbs" type="T_REAL" access="ReadWrite" directaddress="D180" />
+        <Node name="TiltRel" type="T_REAL" access="ReadWrite" directaddress="D182" />
+        <Node name="RelCoordinate" type="T_BOOL" access="ReadWrite" directaddress="M8" />
+        <Node name="GasMeasure" type="T_REAL" access="ReadWrite" directaddress="D104" />
+        <Node name="CurrentPassPar" type="T_PassPar_r" access="ReadWrite" directaddress="D200" />
+        <Node name="PassAdj" type="T_WORD" access="ReadWrite" directaddress="D184">
+          <Comment>Проход для настройки</Comment>
+        </Node>
+      </Node>
+      <Node name="HMI_Retain" nodeflags="NonAccessibleName">
+        <Node name="BeginPosition" type="T_Coordinate_t" access="ReadWrite" directaddress="D1050">
+          <Comment>Начальная позиция</Comment>
+        </Node>
+        <Node name="EndPosition" type="T_Coordinate_t" access="ReadWrite" directaddress="D1099">
+          <Comment>Конечная позиция</Comment>
+        </Node>
+        <Node name="HorManVMax" type="T_REAL" access="ReadWrite" directaddress="D1161">
+          <Comment>Максимальная скорость по горизонтали</Comment>
+        </Node>
+        <Node name="HorTrainingV" type="T_REAL" access="ReadWrite" directaddress="D1163">
+          <Comment>Горизонталь скорость обучения</Comment>
+        </Node>
+        <Node name="ParkingPosition" type="T_Coordinate_t" access="ReadWrite" directaddress="D1218">
+          <Comment>Позиция зоны парковки</Comment>
+        </Node>
+        <Node name="Pass" type="T_WORD" access="ReadWrite" directaddress="D1236">
+          <Comment>Текущий проход</Comment>
+        </Node>
+        <Node name="RotManVMax" type="T_REAL" access="ReadWrite" directaddress="D1239">
+          <Comment>Максимальная частота вращения</Comment>
+        </Node>
+        <Node name="RotOffTime" type="T_WORD" access="ReadWrite" directaddress="D1241">
+          <Comment>Время задержки выключения вращения</Comment>
+        </Node>
+        <Node name="SpeedHi" type="T_REAL" access="ReadWrite" directaddress="D1245">
+          <Comment>Быстрая скорость</Comment>
+        </Node>
+        <Node name="SpeedLo" type="T_REAL" access="ReadWrite" directaddress="D1247">
+          <Comment>Медленная скорость</Comment>
+        </Node>
+        <Node name="SpeedMed" type="T_REAL" access="ReadWrite" directaddress="D1249">
+          <Comment>Средняя скорость</Comment>
+        </Node>
+        <Node name="TrainingOk" type="T_BOOL" access="ReadWrite" directaddress="M1019">
+          <Comment>Обучение выполнено</Comment>
+        </Node>
+        <Node name="UMax" type="T_REAL" access="ReadWrite" directaddress="D1264">
+          <Comment>Максимальное напряжение</Comment>
+        </Node>
+        <Node name="UMaxTech" type="T_REAL" access="ReadWrite" directaddress="D1266">
+          <Comment>Максимальное напряжение</Comment>
+        </Node>
+        <Node name="UMin" type="T_REAL" access="ReadWrite" directaddress="D1268">
+          <Comment>Минимальное напряжение</Comment>
+        </Node>
+        <Node name="UMinTech" type="T_REAL" access="ReadWrite" directaddress="D1270">
+          <Comment>Минимальное напряжение</Comment>
+        </Node>
+        <Node name="UStep" type="T_REAL" access="ReadWrite" directaddress="D1274">
+          <Comment>Шаг изменения напряжения</Comment>
+        </Node>
+        <Node name="VertManVMax" type="T_REAL" access="ReadWrite" directaddress="D1276">
+          <Comment>Максимальная сорость по вертикали</Comment>
+        </Node>
+        <Node name="VertTrainingV" type="T_REAL" access="ReadWrite" directaddress="D1278">
+          <Comment>Вертикаль скорость обучения</Comment>
+        </Node>
+        <Node name="VWeldingMax" type="T_REAL" access="ReadWrite" directaddress="D1280">
+          <Comment>Максимальная скорость сварки</Comment>
+        </Node>
+        <Node name="VWeldingMaxTech" type="T_REAL" access="ReadWrite" directaddress="D1282">
+          <Comment>Максимальная скорость сварки</Comment>
+        </Node>
+        <Node name="VWeldingMin" type="T_REAL" access="ReadWrite" directaddress="D1284">
+          <Comment>Минимальная скорость сварки</Comment>
+        </Node>
+        <Node name="VWeldingMinTech" type="T_REAL" access="ReadWrite" directaddress="D1286">
+          <Comment>Минимальная скорость сварки</Comment>
+        </Node>
+        <Node name="VWeldingStep" type="T_REAL" access="ReadWrite" directaddress="D1290">
+          <Comment>Шаг изменения скорости сварки</Comment>
+        </Node>
+        <Node name="VWireMax" type="T_REAL" access="ReadWrite" directaddress="D1292">
+          <Comment>Максимальная скорость подачи проволоки</Comment>
+        </Node>
+        <Node name="VWireMaxTech" type="T_REAL" access="ReadWrite" directaddress="D1294">
+          <Comment>Максимальная скорость подачи проволоки</Comment>
+        </Node>
+        <Node name="VWireMin" type="T_REAL" access="ReadWrite" directaddress="D1296">
+          <Comment>Минимальная скорость подачи проволоки</Comment>
+        </Node>
+        <Node name="VWireMinTech" type="T_REAL" access="ReadWrite" directaddress="D1298">
+          <Comment>Минимальная скорость подачи проволоки</Comment>
+        </Node>
+        <Node name="VWireStep" type="T_REAL" access="ReadWrite" directaddress="D1304">
+          <Comment>Шаг изменения скорости подачи проволоки</Comment>
+        </Node>
+        <Node name="BrakePosition" type="T_COORDINATE_T" access="ReadWrite" directaddress="D1320" />
+        <Node name="BrakePositionAngle" type="T_REAL" access="ReadWrite" directaddress="D1326" />
+        <Node name="RotVGatePos" type="T_REAL" access="ReadWrite" directaddress="D1460" />
+        <Node name="TiltManVMax" type="T_REAL" access="ReadWrite" directaddress="D1000" />
+        <Node name="TiltTrainingV" type="T_REAL" access="ReadWrite" directaddress="D1002" />
+        <Node name="CalibrUSet" type="T_Calibr_t" access="ReadWrite" directaddress="D1006" />
+        <Node name="CalibrVSet" type="T_Calibr_t" access="ReadWrite" directaddress="D1014" />
+        <Node name="CalibrU" type="T_Calibr_t" access="ReadWrite" directaddress="D1022" />
+        <Node name="CalibrI" type="T_Calibr_t" access="ReadWrite" directaddress="D1030" />
+        <Node name="Parameters" type="T_Parameters_t" access="ReadWrite" directaddress="D1500">
+          <Comment>Все параметры</Comment>
+        </Node>
+        <Node name="CalibrGas" type="T_Calibr_t" access="ReadWrite" directaddress="D1038" />
+      </Node>
+    </Node>
+  </NodeList>
+</Symbolconfiguration>

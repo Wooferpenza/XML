@@ -1,4 +1,4 @@
-QT += core widgets
+QT += core widgets xml
 
 CONFIG += c++17
 

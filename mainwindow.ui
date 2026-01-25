@@ -6,30 +6,82 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1000</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Qt Application</string>
+   <string>XML Парсер переменных</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Добро пожаловать в Qt приложение!</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="btnSelectFile">
+        <property name="text">
+         <string>Выбрать XML файл</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelFileName">
+        <property name="text">
+         <string>Файл не выбран</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </item>
     <item>
-     <widget class="QPushButton" name="pushButton">
-      <property name="text">
-       <string>Нажми меня</string>
+     <widget class="QTableWidget" name="tableVariables">
+      <property name="alternatingRowColors">
+       <bool>true</bool>
       </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
+      <column>
+       <property name="text">
+        <string>Имя переменной</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Тип</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Адрес</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Доступ</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Комментарий</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
