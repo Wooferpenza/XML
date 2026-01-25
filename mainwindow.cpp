@@ -77,6 +77,14 @@ void MainWindow::parseXMLFile(const QString &fileName)
         return;
     }
     
+    // Сначала парсим TypeList для получения маппинга типов
+    typeMap.clear();
+    QDomNodeList typeLists = root.elementsByTagName("TypeList");
+    if (!typeLists.isEmpty()) {
+        QDomElement typeList = typeLists.at(0).toElement();
+        parseTypeList(typeList);
+    }
+    
     // Поиск NodeList
     QDomNodeList nodeLists = root.elementsByTagName("NodeList");
     if (nodeLists.isEmpty()) {
@@ -91,6 +99,27 @@ void MainWindow::parseXMLFile(const QString &fileName)
     displayVariables();
     
     statusBar()->showMessage(QString("Загружено переменных: %1").arg(variables.size()), 3000);
+}
+
+void MainWindow::parseTypeList(const QDomElement &typeList)
+{
+    QDomNode node = typeList.firstChild();
+    while (!node.isNull()) {
+        if (node.isElement()) {
+            QDomElement element = node.toElement();
+            QString tagName = element.tagName();
+            
+            // Обрабатываем TypeSimple, TypeArray, TypeUserDef
+            if (tagName == "TypeSimple" || tagName == "TypeArray" || tagName == "TypeUserDef") {
+                QString typeName = element.attribute("name");
+                QString iecName = element.attribute("iecname");
+                if (!typeName.isEmpty() && !iecName.isEmpty()) {
+                    typeMap[typeName] = iecName;
+                }
+            }
+        }
+        node = node.nextSibling();
+    }
 }
 
 void MainWindow::parseNodeList(const QDomElement &nodeList)
@@ -135,7 +164,8 @@ void MainWindow::parseNode(const QDomElement &node, const QString &parentPath)
         // Это переменная
         VariableInfo var;
         var.name = currentPath;
-        var.type = type;
+        // Получаем iecname из маппинга типов, если он есть
+        var.type = typeMap.contains(type) ? typeMap[type] : type;
         var.address = address;
         var.access = node.attribute("access");
         

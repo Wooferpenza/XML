@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDomDocument>
 #include <QDomElement>
+#include <QMap>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,12 +31,14 @@ private slots:
     
 private:
     void parseXMLFile(const QString &fileName);
+    void parseTypeList(const QDomElement &typeList);
     void parseNodeList(const QDomElement &nodeList);
     void parseNode(const QDomElement &node, const QString &parentPath = "");
     void displayVariables();
     
     Ui::MainWindow *ui;
     QList<VariableInfo> variables;
+    QMap<QString, QString> typeMap; // Маппинг имени типа на iecname
 };
 
 #endif // MAINWINDOW_H
