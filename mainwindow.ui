@@ -47,12 +47,12 @@
      </layout>
     </item>
     <item>
-     <widget class="QTableWidget" name="tableVariables">
+     <widget class="QTreeWidget" name="tableVariables">
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
-      <property name="selectionBehavior">
-       <enum>QAbstractItemView::SelectRows</enum>
+      <property name="headerHidden">
+       <bool>false</bool>
       </property>
       <property name="sortingEnabled">
        <bool>true</bool>

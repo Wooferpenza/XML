@@ -5,17 +5,33 @@
 #include <QDomDocument>
 #include <QDomElement>
 #include <QMap>
+#include <QList>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+struct UserDefElement {
+    QString iecname;
+    QString type;
+    QString byteoffset;
+};
+
+struct TypeUserDefInfo {
+    QString name;
+    QString iecname;
+    QString typeclass;
+    QList<UserDefElement> elements;
+};
+
 struct VariableInfo {
     QString name;
     QString type;
+    QString typeName; // Оригинальное имя типа (T_XXX)
     QString address;
     QString access;
     QString comment;
+    bool isUserDef;
 };
 
 class MainWindow : public QMainWindow
@@ -39,6 +55,7 @@ private:
     Ui::MainWindow *ui;
     QList<VariableInfo> variables;
     QMap<QString, QString> typeMap; // Маппинг имени типа на iecname
+    QMap<QString, TypeUserDefInfo> userDefTypes; // Информация о пользовательских типах
 };
 
 #endif // MAINWINDOW_H

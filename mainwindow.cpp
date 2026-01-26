@@ -4,7 +4,8 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QHeaderView>
-#include <QTableWidgetItem>
+#include <QTreeWidgetItem>
+#include <QRegularExpression>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -14,14 +15,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("XML Парсер переменных");
     
-    // Настройка таблицы
+    // Настройка дерева
     ui->tableVariables->setColumnCount(5);
-    ui->tableVariables->setHorizontalHeaderLabels(QStringList() 
+    ui->tableVariables->setHeaderLabels(QStringList() 
         << "Имя переменной" << "Тип" << "Адрес" << "Доступ" << "Комментарий");
-    ui->tableVariables->horizontalHeader()->setStretchLastSection(true);
-    ui->tableVariables->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableVariables->header()->setStretchLastSection(true);
     ui->tableVariables->setAlternatingRowColors(true);
     ui->tableVariables->setSortingEnabled(true);
+    ui->tableVariables->setRootIsDecorated(true);
     
     // Подключение сигнала кнопки
     connect(ui->btnSelectFile, &QPushButton::clicked, this, &MainWindow::onSelectFile);
@@ -79,6 +80,7 @@ void MainWindow::parseXMLFile(const QString &fileName)
     
     // Сначала парсим TypeList для получения маппинга типов
     typeMap.clear();
+    userDefTypes.clear();
     QDomNodeList typeLists = root.elementsByTagName("TypeList");
     if (!typeLists.isEmpty()) {
         QDomElement typeList = typeLists.at(0).toElement();
@@ -109,12 +111,44 @@ void MainWindow::parseTypeList(const QDomElement &typeList)
             QDomElement element = node.toElement();
             QString tagName = element.tagName();
             
+            QString typeName = element.attribute("name");
+            QString iecName = element.attribute("iecname");
+            
             // Обрабатываем TypeSimple, TypeArray, TypeUserDef
             if (tagName == "TypeSimple" || tagName == "TypeArray" || tagName == "TypeUserDef") {
-                QString typeName = element.attribute("name");
-                QString iecName = element.attribute("iecname");
                 if (!typeName.isEmpty() && !iecName.isEmpty()) {
                     typeMap[typeName] = iecName;
+                }
+            }
+            
+            // Дополнительно обрабатываем TypeUserDef для сохранения структуры
+            if (tagName == "TypeUserDef") {
+                QString typeclass = element.attribute("typeclass");
+                if (typeclass == "Userdef") {
+                    TypeUserDefInfo userDefInfo;
+                    userDefInfo.name = typeName;
+                    userDefInfo.iecname = iecName;
+                    userDefInfo.typeclass = typeclass;
+                    
+                    // Парсим UserDefElement
+                    QDomNode childNode = element.firstChild();
+                    while (!childNode.isNull()) {
+                        if (childNode.isElement()) {
+                            QDomElement childElement = childNode.toElement();
+                            if (childElement.tagName() == "UserDefElement") {
+                                UserDefElement elem;
+                                elem.iecname = childElement.attribute("iecname");
+                                elem.type = childElement.attribute("type");
+                                elem.byteoffset = childElement.attribute("byteoffset");
+                                userDefInfo.elements.append(elem);
+                            }
+                        }
+                        childNode = childNode.nextSibling();
+                    }
+                    
+                    if (!typeName.isEmpty()) {
+                        userDefTypes[typeName] = userDefInfo;
+                    }
                 }
             }
         }
@@ -164,10 +198,13 @@ void MainWindow::parseNode(const QDomElement &node, const QString &parentPath)
         // Это переменная
         VariableInfo var;
         var.name = currentPath;
+        var.typeName = type; // Сохраняем оригинальное имя типа
         // Получаем iecname из маппинга типов, если он есть
         var.type = typeMap.contains(type) ? typeMap[type] : type;
         var.address = address;
         var.access = node.attribute("access");
+        // Проверяем, является ли тип Userdef
+        var.isUserDef = userDefTypes.contains(type);
         
         // Ищем комментарий
         QDomNode commentNode = node.firstChild();
@@ -197,18 +234,78 @@ void MainWindow::parseNode(const QDomElement &node, const QString &parentPath)
 
 void MainWindow::displayVariables()
 {
-    ui->tableVariables->setRowCount(variables.size());
+    ui->tableVariables->clear();
     
     for (int i = 0; i < variables.size(); ++i) {
         const VariableInfo &var = variables.at(i);
         
-        ui->tableVariables->setItem(i, 0, new QTableWidgetItem(var.name));
-        ui->tableVariables->setItem(i, 1, new QTableWidgetItem(var.type));
-        ui->tableVariables->setItem(i, 2, new QTableWidgetItem(var.address));
-        ui->tableVariables->setItem(i, 3, new QTableWidgetItem(var.access));
-        ui->tableVariables->setItem(i, 4, new QTableWidgetItem(var.comment));
+        QTreeWidgetItem *item = new QTreeWidgetItem(ui->tableVariables);
+        item->setText(0, var.name);
+        item->setText(1, var.type);
+        item->setText(2, var.address);
+        item->setText(3, var.access);
+        item->setText(4, var.comment);
+        
+        // Если это Userdef тип, добавляем дочерние элементы
+        if (var.isUserDef && userDefTypes.contains(var.typeName)) {
+            const TypeUserDefInfo &userDefInfo = userDefTypes[var.typeName];
+            
+            for (const UserDefElement &elem : userDefInfo.elements) {
+                QTreeWidgetItem *childItem = new QTreeWidgetItem(item);
+                QString elemType = typeMap.contains(elem.type) ? typeMap[elem.type] : elem.type;
+                QString elemAddress = var.address;
+                
+                // Вычисляем адрес дочернего элемента (базовый адрес + смещение)
+                if (!elem.byteoffset.isEmpty() && !var.address.isEmpty()) {
+                    bool ok;
+                    int offset = elem.byteoffset.toInt(&ok);
+                    if (ok) {
+                        QString baseAddr = var.address;
+                        // Пытаемся извлечь числовую часть адреса
+                        // Адреса могут быть вида: D100, M0, X0.2, Y1.3, HC202
+                        QRegularExpression rx("^([A-Z]+)(\\d+)(?:\\.(\\d+))?$");
+                        QRegularExpressionMatch match = rx.match(baseAddr);
+                        if (match.hasMatch()) {
+                            QString prefix = match.captured(1);
+                            QString numPart = match.captured(2);
+                            QString bitPart = match.captured(3);
+                            
+                            bool numOk;
+                            int baseNum = numPart.toInt(&numOk);
+                            if (numOk) {
+                                // Вычисляем новый адрес с учетом смещения
+                                // Смещение в байтах, для D-регистров это обычно 2 байта на регистр
+                                int newNum = baseNum + offset / 2; // Предполагаем, что регистры по 2 байта
+                                if (bitPart.isEmpty()) {
+                                    elemAddress = QString("%1%2").arg(prefix).arg(newNum);
+                                } else {
+                                    elemAddress = QString("%1%2.%3").arg(prefix).arg(newNum).arg(bitPart);
+                                }
+                                // Добавляем информацию о смещении в комментарий
+                                childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
+                            }
+                        } else {
+                            // Если не удалось распарсить, показываем смещение
+                            elemAddress = QString("%1 (+%2 байт)").arg(var.address).arg(offset);
+                        }
+                    }
+                }
+                
+                childItem->setText(0, var.name + "." + elem.iecname);
+                childItem->setText(1, elemType);
+                childItem->setText(2, elemAddress);
+                childItem->setText(3, var.access);
+                if (childItem->text(4).isEmpty()) {
+                    childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
+                }
+            }
+            
+            item->setExpanded(false); // По умолчанию свернуто
+        }
     }
     
     // Автоматическое изменение размера столбцов
-    ui->tableVariables->resizeColumnsToContents();
+    ui->tableVariables->resizeColumnToContents(0);
+    ui->tableVariables->resizeColumnToContents(1);
+    ui->tableVariables->resizeColumnToContents(2);
 }
