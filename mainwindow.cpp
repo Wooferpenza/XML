@@ -249,57 +249,7 @@ void MainWindow::displayVariables()
         // Если это Userdef тип, добавляем дочерние элементы
         if (var.isUserDef && userDefTypes.contains(var.typeName)) {
             const TypeUserDefInfo &userDefInfo = userDefTypes[var.typeName];
-            
-            for (const UserDefElement &elem : userDefInfo.elements) {
-                QTreeWidgetItem *childItem = new QTreeWidgetItem(item);
-                QString elemType = typeMap.contains(elem.type) ? typeMap[elem.type] : elem.type;
-                QString elemAddress = var.address;
-                
-                // Вычисляем адрес дочернего элемента (базовый адрес + смещение)
-                if (!elem.byteoffset.isEmpty() && !var.address.isEmpty()) {
-                    bool ok;
-                    int offset = elem.byteoffset.toInt(&ok);
-                    if (ok) {
-                        QString baseAddr = var.address;
-                        // Пытаемся извлечь числовую часть адреса
-                        // Адреса могут быть вида: D100, M0, X0.2, Y1.3, HC202
-                        QRegularExpression rx("^([A-Z]+)(\\d+)(?:\\.(\\d+))?$");
-                        QRegularExpressionMatch match = rx.match(baseAddr);
-                        if (match.hasMatch()) {
-                            QString prefix = match.captured(1);
-                            QString numPart = match.captured(2);
-                            QString bitPart = match.captured(3);
-                            
-                            bool numOk;
-                            int baseNum = numPart.toInt(&numOk);
-                            if (numOk) {
-                                // Вычисляем новый адрес с учетом смещения
-                                // Смещение в байтах, для D-регистров это обычно 2 байта на регистр
-                                int newNum = baseNum + offset / 2; // Предполагаем, что регистры по 2 байта
-                                if (bitPart.isEmpty()) {
-                                    elemAddress = QString("%1%2").arg(prefix).arg(newNum);
-                                } else {
-                                    elemAddress = QString("%1%2.%3").arg(prefix).arg(newNum).arg(bitPart);
-                                }
-                                // Добавляем информацию о смещении в комментарий
-                                childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
-                            }
-                        } else {
-                            // Если не удалось распарсить, показываем смещение
-                            elemAddress = QString("%1 (+%2 байт)").arg(var.address).arg(offset);
-                        }
-                    }
-                }
-                
-                childItem->setText(0, var.name + "." + elem.iecname);
-                childItem->setText(1, elemType);
-                childItem->setText(2, elemAddress);
-                childItem->setText(3, var.access);
-                if (childItem->text(4).isEmpty()) {
-                    childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
-                }
-            }
-            
+            addUserDefElements(item, var.name, var.address, userDefInfo);
             item->setExpanded(false); // По умолчанию свернуто
         }
     }
@@ -308,4 +258,73 @@ void MainWindow::displayVariables()
     ui->tableVariables->resizeColumnToContents(0);
     ui->tableVariables->resizeColumnToContents(1);
     ui->tableVariables->resizeColumnToContents(2);
+}
+
+void MainWindow::addUserDefElements(QTreeWidgetItem *parentItem, const QString &parentName, 
+                                   const QString &parentAddress, const TypeUserDefInfo &userDefInfo)
+{
+    for (const UserDefElement &elem : userDefInfo.elements) {
+        QTreeWidgetItem *childItem = new QTreeWidgetItem(parentItem);
+        QString elemType = typeMap.contains(elem.type) ? typeMap[elem.type] : elem.type;
+        QString elemTypeName = elem.type; // Оригинальное имя типа для проверки
+        QString elemAddress = parentAddress;
+        QString elemFullName = parentName + "." + elem.iecname;
+        
+        // Вычисляем адрес дочернего элемента (базовый адрес + смещение)
+        if (!elem.byteoffset.isEmpty() && !parentAddress.isEmpty()) {
+            bool ok;
+            int offset = elem.byteoffset.toInt(&ok);
+            if (ok) {
+                QString baseAddr = parentAddress;
+                // Пытаемся извлечь числовую часть адреса
+                // Адреса могут быть вида: D100, M0, X0.2, Y1.3, HC202
+                QRegularExpression rx("^([A-Z]+)(\\d+)(?:\\.(\\d+))?$");
+                QRegularExpressionMatch match = rx.match(baseAddr);
+                if (match.hasMatch()) {
+                    QString prefix = match.captured(1);
+                    QString numPart = match.captured(2);
+                    QString bitPart = match.captured(3);
+                    
+                    bool numOk;
+                    int baseNum = numPart.toInt(&numOk);
+                    if (numOk) {
+                        // Вычисляем новый адрес с учетом смещения
+                        // Смещение в байтах, для D-регистров это обычно 2 байта на регистр
+                        int newNum = baseNum + offset / 2; // Предполагаем, что регистры по 2 байта
+                        if (bitPart.isEmpty()) {
+                            elemAddress = QString("%1%2").arg(prefix).arg(newNum);
+                        } else {
+                            elemAddress = QString("%1%2.%3").arg(prefix).arg(newNum).arg(bitPart);
+                        }
+                    }
+                } else {
+                    // Если не удалось распарсить адрес, оставляем базовый адрес
+                    // Смещение будет показано в комментарии для простых типов
+                    elemAddress = parentAddress;
+                }
+            }
+        }
+        
+        childItem->setText(0, elemFullName);
+        childItem->setText(1, elemType);
+        childItem->setText(2, elemAddress);
+        childItem->setText(3, parentItem->text(3)); // Наследуем доступ от родителя
+        
+        // Проверяем, является ли текущий элемент UserDef типом (вложенным)
+        // Для вложенных типов не показываем смещение в комментарии
+        if (userDefTypes.contains(elemTypeName)) {
+            // Это вложенный UserDef тип - не показываем смещение
+            childItem->setText(4, "");
+            const TypeUserDefInfo &nestedUserDefInfo = userDefTypes[elemTypeName];
+            addUserDefElements(childItem, elemFullName, elemAddress, nestedUserDefInfo);
+            childItem->setExpanded(false); // По умолчанию свернуто
+        } else {
+            // Это простой тип (не UserDef) - показываем смещение
+            if (!elem.byteoffset.isEmpty()) {
+                childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
+            } else {
+                childItem->setText(4, "");
+            }
+        }
+    }
 }

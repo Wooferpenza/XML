@@ -8,6 +8,7 @@
 #include <QList>
 
 QT_BEGIN_NAMESPACE
+class QTreeWidgetItem;
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
@@ -51,6 +52,8 @@ private:
     void parseNodeList(const QDomElement &nodeList);
     void parseNode(const QDomElement &node, const QString &parentPath = "");
     void displayVariables();
+    void addUserDefElements(QTreeWidgetItem *parentItem, const QString &parentName, 
+                           const QString &parentAddress, const TypeUserDefInfo &userDefInfo);
     
     Ui::MainWindow *ui;
     QList<VariableInfo> variables;
