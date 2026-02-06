@@ -321,7 +321,7 @@ void MainWindow::addUserDefElements(QTreeWidgetItem *parentItem, const QString &
         } else {
             // Это простой тип (не UserDef) - показываем смещение
             if (!elem.byteoffset.isEmpty()) {
-                childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
+                //childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
             } else {
                 childItem->setText(4, "");
             }

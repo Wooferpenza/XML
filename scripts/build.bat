@@ -15,7 +15,7 @@ REM Поиск MinGW компилятора
 set "MINGW_PATH="
 if exist "C:\Qt\Tools\mingw1120_64\bin\mingw32-make.exe" (
     set "MINGW_PATH=C:\Qt\Tools\mingw1120_64\bin"
-    goto :mingw_found
+ REM   goto :mingw_found
 )
 if exist "C:\Qt\Tools\mingw1310_64\bin\mingw32-make.exe" (
     set "MINGW_PATH=C:\Qt\Tools\mingw1310_64\bin"
