@@ -8,6 +8,7 @@
 #include <QList>
 
 QT_BEGIN_NAMESPACE
+class QLabel;
 class QTreeWidgetItem;
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -45,6 +46,8 @@ public:
 
 private slots:
     void onSelectFile();
+    void onExit();
+    void onAbout();
     
 private:
     void parseXMLFile(const QString &fileName);
@@ -56,6 +59,7 @@ private:
                            const QString &parentAddress, const TypeUserDefInfo &userDefInfo);
     
     Ui::MainWindow *ui;
+    QLabel *labelStatusFile;  // путь к файлу в статус-баре
     QList<VariableInfo> variables;
     QMap<QString, QString> typeMap; // Маппинг имени типа на iecname
     QMap<QString, TypeUserDefInfo> userDefTypes; // Информация о пользовательских типах

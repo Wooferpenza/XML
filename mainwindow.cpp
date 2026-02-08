@@ -7,6 +7,11 @@
 #include <QTreeWidgetItem>
 #include <QRegularExpression>
 #include <QDebug>
+#include <QMenuBar>
+#include <QMenu>
+#include <QAction>
+#include <QKeySequence>
+#include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -14,7 +19,19 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowTitle("XML Парсер переменных");
-    
+
+    // Меню создаём в коде — так оно гарантированно отображается
+    QMenuBar *menuBar = new QMenuBar(this);
+    setMenuBar(menuBar);
+
+    QMenu *menuFile = menuBar->addMenu(tr("Файл"));
+    QAction *actionOpen = menuFile->addAction(tr("Открыть..."), this, &MainWindow::onSelectFile);
+    actionOpen->setShortcut(QKeySequence::Open);
+    menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)->setShortcut(QKeySequence::Quit);
+
+    QMenu *menuHelp = menuBar->addMenu(tr("Справка"));
+    menuHelp->addAction(tr("О программе"), this, &MainWindow::onAbout);
+
     // Настройка дерева
     ui->tableVariables->setColumnCount(5);
     ui->tableVariables->setHeaderLabels(QStringList() 
@@ -23,9 +40,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->tableVariables->setAlternatingRowColors(true);
     ui->tableVariables->setSortingEnabled(true);
     ui->tableVariables->setRootIsDecorated(true);
+
+    // Информация о файле — в статус-бар (постоянно справа)
+    labelStatusFile = new QLabel(tr("Файл не выбран"), this);
+    statusBar()->addPermanentWidget(labelStatusFile);
     
-    // Подключение сигнала кнопки
-    connect(ui->btnSelectFile, &QPushButton::clicked, this, &MainWindow::onSelectFile);
 }
 
 MainWindow::~MainWindow()
@@ -40,9 +59,22 @@ void MainWindow::onSelectFile()
         tr("XML Files (*.xml);;All Files (*)"));
     
     if (!fileName.isEmpty()) {
-        ui->labelFileName->setText(QString("Файл: %1").arg(fileName));
+        labelStatusFile->setText(tr("Файл: %1").arg(fileName));
         parseXMLFile(fileName);
     }
+}
+
+void MainWindow::onExit()
+{
+    close();
+}
+
+void MainWindow::onAbout()
+{
+    QMessageBox::about(this, tr("О программе"),
+        tr("<h3>XML Парсер переменных</h3>"
+           "<p>Просмотр переменных из XML-файлов конфигурации (Symbolconfiguration).</p>"
+           "<p>Поддерживаются типы TypeSimple, TypeArray и TypeUserDef.</p>"));
 }
 
 void MainWindow::parseXMLFile(const QString &fileName)
