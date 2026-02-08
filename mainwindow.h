@@ -6,6 +6,7 @@
 #include <QDomElement>
 #include <QMap>
 #include <QList>
+#include <Qt>
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -48,7 +49,8 @@ private slots:
     void onSelectFile();
     void onExit();
     void onAbout();
-    
+    void onVariableItemChanged(QTreeWidgetItem *item, int column);
+
 private:
     void parseXMLFile(const QString &fileName);
     void parseTypeList(const QDomElement &typeList);
@@ -57,7 +59,8 @@ private:
     void displayVariables();
     void addUserDefElements(QTreeWidgetItem *parentItem, const QString &parentName, 
                            const QString &parentAddress, const TypeUserDefInfo &userDefInfo);
-    
+    void setChildrenCheckState(QTreeWidgetItem *parent, Qt::CheckState state);
+
     Ui::MainWindow *ui;
     QLabel *labelStatusFile;  // путь к файлу в статус-баре
     QList<VariableInfo> variables;

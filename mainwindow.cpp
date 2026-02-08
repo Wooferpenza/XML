@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QHeaderView>
+#include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QRegularExpression>
 #include <QDebug>
@@ -12,13 +13,70 @@
 #include <QAction>
 #include <QKeySequence>
 #include <QLabel>
+#include <QFontMetrics>
+
+namespace {
+
+enum { AddressColumn = 3 };
+
+// Ключ для числового сравнения адресов: префикс (D, M, X, HC...), число, подномер (бит)
+struct AddressKey {
+    QString prefix;
+    qlonglong num = 0;
+    int bit = -1;
+    bool valid = false;
+};
+
+AddressKey parseAddressKey(const QString &address)
+{
+    AddressKey k;
+    QRegularExpression rx(QStringLiteral("^([A-Za-z]+)(\\d+)(?:\\.(\\d+))?$"));
+    QRegularExpressionMatch m = rx.match(address.trimmed());
+    if (m.hasMatch()) {
+        k.prefix = m.captured(1);
+        k.num = m.captured(2).toLongLong();
+        k.bit = m.captured(3).isEmpty() ? -1 : m.captured(3).toInt();
+        k.valid = true;
+    }
+    return k;
+}
+
+bool addressLessThan(const QString &a, const QString &b)
+{
+    AddressKey ka = parseAddressKey(a);
+    AddressKey kb = parseAddressKey(b);
+    if (!ka.valid && !kb.valid) return a < b;
+    if (!ka.valid) return true;
+    if (!kb.valid) return false;
+    if (ka.prefix != kb.prefix) return ka.prefix < kb.prefix;
+    if (ka.num != kb.num) return ka.num < kb.num;
+    return ka.bit < kb.bit;
+}
+
+class VariableTreeWidgetItem : public QTreeWidgetItem
+{
+public:
+    using QTreeWidgetItem::QTreeWidgetItem;
+    bool operator<(const QTreeWidgetItem &other) const override
+    {
+        const QTreeWidget *tw = treeWidget();
+        if (tw && tw->sortColumn() == AddressColumn) {
+            QString a = text(AddressColumn);
+            QString b = other.text(AddressColumn);
+            return addressLessThan(a, b);
+        }
+        return QTreeWidgetItem::operator<(other);
+    }
+};
+
+} // namespace
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("XML Парсер переменных");
+    setWindowTitle("Парсер переменных");
 
     // Меню создаём в коде — так оно гарантированно отображается
     QMenuBar *menuBar = new QMenuBar(this);
@@ -33,18 +91,24 @@ MainWindow::MainWindow(QWidget *parent)
     menuHelp->addAction(tr("О программе"), this, &MainWindow::onAbout);
 
     // Настройка дерева
-    ui->tableVariables->setColumnCount(5);
+    ui->tableVariables->setColumnCount(6);
     ui->tableVariables->setHeaderLabels(QStringList() 
-        << "Имя переменной" << "Тип" << "Адрес" << "Доступ" << "Комментарий");
+        << "Выбор" << "Имя переменной" << "Тип" << "Адрес" << "Доступ" << "Комментарий");
     ui->tableVariables->header()->setStretchLastSection(true);
     ui->tableVariables->setAlternatingRowColors(true);
     ui->tableVariables->setSortingEnabled(true);
     ui->tableVariables->setRootIsDecorated(true);
-
+    {
+        QHeaderView *h = ui->tableVariables->header();
+        int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 32;
+        ui->tableVariables->setColumnWidth(0, w);
+    }
+   
     // Информация о файле — в статус-бар (постоянно справа)
     labelStatusFile = new QLabel(tr("Файл не выбран"), this);
     statusBar()->addPermanentWidget(labelStatusFile);
-    
+
+    connect(ui->tableVariables, &QTreeWidget::itemChanged, this, &MainWindow::onVariableItemChanged);
 }
 
 MainWindow::~MainWindow()
@@ -75,6 +139,25 @@ void MainWindow::onAbout()
         tr("<h3>XML Парсер переменных</h3>"
            "<p>Просмотр переменных из XML-файлов конфигурации (Symbolconfiguration).</p>"
            "<p>Поддерживаются типы TypeSimple, TypeArray и TypeUserDef.</p>"));
+}
+
+void MainWindow::onVariableItemChanged(QTreeWidgetItem *item, int column)
+{
+    if (column != 0)
+        return;
+    const Qt::CheckState state = item->checkState(0);
+    ui->tableVariables->blockSignals(true);
+    setChildrenCheckState(item, state);
+    ui->tableVariables->blockSignals(false);
+}
+
+void MainWindow::setChildrenCheckState(QTreeWidgetItem *parent, Qt::CheckState state)
+{
+    for (int i = 0; i < parent->childCount(); ++i) {
+        QTreeWidgetItem *child = parent->child(i);
+        child->setCheckState(0, state);
+        setChildrenCheckState(child, state);
+    }
 }
 
 void MainWindow::parseXMLFile(const QString &fileName)
@@ -271,12 +354,14 @@ void MainWindow::displayVariables()
     for (int i = 0; i < variables.size(); ++i) {
         const VariableInfo &var = variables.at(i);
         
-        QTreeWidgetItem *item = new QTreeWidgetItem(ui->tableVariables);
-        item->setText(0, var.name);
-        item->setText(1, var.type);
-        item->setText(2, var.address);
-        item->setText(3, var.access);
-        item->setText(4, var.comment);
+        VariableTreeWidgetItem *item = new VariableTreeWidgetItem(ui->tableVariables);
+        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+        item->setCheckState(0, Qt::Unchecked);
+        item->setText(1, var.name);
+        item->setText(2, var.type);
+        item->setText(3, var.address);
+        item->setText(4, var.access);
+        item->setText(5, var.comment);
         
         // Если это Userdef тип, добавляем дочерние элементы
         if (var.isUserDef && userDefTypes.contains(var.typeName)) {
@@ -286,17 +371,23 @@ void MainWindow::displayVariables()
         }
     }
     
-    // Автоматическое изменение размера столбцов
-    ui->tableVariables->resizeColumnToContents(0);
+    // Столбец 0 — ширина по тексту заголовка «Выбор» + отступ
+    {
+        QHeaderView *h = ui->tableVariables->header();
+        int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 24;
+        ui->tableVariables->setColumnWidth(0, w);
+    }
     ui->tableVariables->resizeColumnToContents(1);
     ui->tableVariables->resizeColumnToContents(2);
+    ui->tableVariables->resizeColumnToContents(3);
+    
 }
 
 void MainWindow::addUserDefElements(QTreeWidgetItem *parentItem, const QString &parentName, 
                                    const QString &parentAddress, const TypeUserDefInfo &userDefInfo)
 {
     for (const UserDefElement &elem : userDefInfo.elements) {
-        QTreeWidgetItem *childItem = new QTreeWidgetItem(parentItem);
+        VariableTreeWidgetItem *childItem = new VariableTreeWidgetItem(parentItem);
         QString elemType = typeMap.contains(elem.type) ? typeMap[elem.type] : elem.type;
         QString elemTypeName = elem.type; // Оригинальное имя типа для проверки
         QString elemAddress = parentAddress;
@@ -337,25 +428,23 @@ void MainWindow::addUserDefElements(QTreeWidgetItem *parentItem, const QString &
             }
         }
         
-        childItem->setText(0, elemFullName);
-        childItem->setText(1, elemType);
-        childItem->setText(2, elemAddress);
-        childItem->setText(3, parentItem->text(3)); // Наследуем доступ от родителя
+        childItem->setFlags(childItem->flags() | Qt::ItemIsUserCheckable);
+        childItem->setCheckState(0, Qt::Unchecked);
+        childItem->setText(1, elemFullName);
+        childItem->setText(2, elemType);
+        childItem->setText(3, elemAddress);
+        childItem->setText(4, parentItem->text(4)); // Наследуем доступ от родителя
         
-        // Проверяем, является ли текущий элемент UserDef типом (вложенным)
-        // Для вложенных типов не показываем смещение в комментарии
         if (userDefTypes.contains(elemTypeName)) {
-            // Это вложенный UserDef тип - не показываем смещение
-            childItem->setText(4, "");
+            childItem->setText(5, "");
             const TypeUserDefInfo &nestedUserDefInfo = userDefTypes[elemTypeName];
             addUserDefElements(childItem, elemFullName, elemAddress, nestedUserDefInfo);
-            childItem->setExpanded(false); // По умолчанию свернуто
+            childItem->setExpanded(false);
         } else {
-            // Это простой тип (не UserDef) - показываем смещение
             if (!elem.byteoffset.isEmpty()) {
-                //childItem->setText(4, QString("Смещение: %1 байт").arg(elem.byteoffset));
+                //childItem->setText(5, QString("Смещение: %1 байт").arg(elem.byteoffset));
             } else {
-                childItem->setText(4, "");
+                childItem->setText(5, "");
             }
         }
     }

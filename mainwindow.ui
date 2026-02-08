@@ -28,6 +28,11 @@
       </property>
       <column>
        <property name="text">
+        <string>Выбор</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
         <string>Имя переменной</string>
        </property>
       </column>

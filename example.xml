@@ -66,7 +66,7 @@
       <UserDefElement iecname="Pass" type="T_ARRAY__0__9__OF_PassPar_r" vartype="VAR" byteoffset="24" />
     </TypeUserDef>
   </TypeList>
-  <NodeList>
+  <NodeList> 
     <Node name="PLC" nodeflags="NonAccessibleName">
       <Node name="Default_Tag_Table" nodeflags="NonAccessibleName" />
       <Node name="CANopen_Tag_Table" nodeflags="NonAccessibleName" />
