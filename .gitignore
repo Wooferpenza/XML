@@ -36,7 +36,6 @@ object_script.*.Debug
 *.dylib
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo

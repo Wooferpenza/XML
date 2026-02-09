@@ -89,8 +89,9 @@ MainWindow::MainWindow(QWidget *parent)
     
     QAction *actionExport = menuFile->addAction(tr("Экспорт в LUA"), this, &MainWindow::onExportFile);
 
-    menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)->setShortcut(QKeySequence::Quit);
 
+    menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)->setShortcut(QKeySequence::Quit);
+    //сс
     QMenu *menuHelp = menuBar->addMenu(tr("Справка"));
     menuHelp->addAction(tr("О программе"), this, &MainWindow::onAbout);
 
