@@ -1,0 +1,14 @@
+{
+    "C_Cpp.default.compilerPath": "C:/Qt/Tools/mingw1310_64/bin/g++.exe",
+    "C_Cpp.default.includePath": [
+      "C:/Qt/6.8.1/mingw_64/include",
+      "C:/Qt/6.8.1/mingw_64/include/QtCore",
+      "C:/Qt/6.8.1/mingw_64/include/QtGui",
+      "C:/Qt/6.8.1/mingw_64/include/QtWidgets"
+    ],
+    "C_Cpp.default.defines": [
+      "QT_CORE_LIB",
+      "QT_GUI_LIB",
+      "QT_WIDGETS_LIB"
+    ]
+  }
