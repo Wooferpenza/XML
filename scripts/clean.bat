@@ -69,4 +69,4 @@ if exist *.obj (
 echo [SUCCESS] Очистка завершена!
 echo.
 
-pause
+REM pause

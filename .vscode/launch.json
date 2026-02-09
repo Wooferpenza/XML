@@ -1,0 +1,67 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch (Release)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/release/MyQtApp.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        { "name": "PATH", "value": "C:\\Qt\\6.8.1\\mingw_64\\bin;${env:PATH}" }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Qt/Tools/mingw1310_64/bin/gdb.exe",
+      "preLaunchTask": ""
+    },
+    {
+      "name": "Debug (Release)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/release/MyQtApp.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        { "name": "PATH", "value": "C:\\Qt\\6.8.1\\mingw_64\\bin;${env:PATH}" }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Qt/Tools/mingw1310_64/bin/gdb.exe",
+      "preLaunchTask": "Build",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Launch (Debug)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/debug/MyQtApp.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        { "name": "PATH", "value": "C:\\Qt\\6.8.1\\mingw_64\\bin;${env:PATH}" }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Qt/Tools/mingw1310_64/bin/gdb.exe",
+      "preLaunchTask": ""
+    },
+    {
+      "name": "Debug (Debug build)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/debug/MyQtApp.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        { "name": "PATH", "value": "C:\\Qt\\6.8.1\\mingw_64\\bin;${env:PATH}" }
+      ],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Qt/Tools/mingw1310_64/bin/gdb.exe",
+      "preLaunchTask": "Build",
+      "stopAtEntry": false
+    }
+  ]
+}

@@ -95,4 +95,4 @@ if exist release\MyQtApp.exe (
 )
 echo.
 
-pause
+REM pause
