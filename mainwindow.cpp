@@ -78,6 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("Парсер переменных");
 
+
     // Меню создаём в коде — так оно гарантированно отображается
     QMenuBar *menuBar = new QMenuBar(this);
     setMenuBar(menuBar);
@@ -85,6 +86,9 @@ MainWindow::MainWindow(QWidget *parent)
     QMenu *menuFile = menuBar->addMenu(tr("Файл"));
     QAction *actionOpen = menuFile->addAction(tr("Открыть..."), this, &MainWindow::onSelectFile);
     actionOpen->setShortcut(QKeySequence::Open);
+    
+    QAction *actionExport = menuFile->addAction(tr("Экспорт в LUA"), this, &MainWindow::onExportFile);
+
     menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)->setShortcut(QKeySequence::Quit);
 
     QMenu *menuHelp = menuBar->addMenu(tr("Справка"));
@@ -127,7 +131,12 @@ void MainWindow::onSelectFile()
         parseXMLFile(fileName);
     }
 }
-
+void MainWindow::onExportFile()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+    tr("Выберите LUA файл"), "Parameters",
+    tr("LUA Files (*.lua);;All Files (*)"));
+}
 void MainWindow::onExit()
 {
     close();
@@ -374,7 +383,7 @@ void MainWindow::displayVariables()
     // Столбец 0 — ширина по тексту заголовка «Выбор» + отступ
     {
         QHeaderView *h = ui->tableVariables->header();
-        int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 24;
+        int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 50;
         ui->tableVariables->setColumnWidth(0, w);
     }
     ui->tableVariables->resizeColumnToContents(1);

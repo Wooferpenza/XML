@@ -47,6 +47,7 @@ public:
 
 private slots:
     void onSelectFile();
+    void onExportFile();
     void onExit();
     void onAbout();
     void onVariableItemChanged(QTreeWidgetItem *item, int column);
