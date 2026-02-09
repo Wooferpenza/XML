@@ -1,6 +1,7 @@
 QT += core widgets xml
 
 CONFIG += c++17
+CONFIG += compile_commands
 
 TARGET = MyQtApp
 TEMPLATE = app

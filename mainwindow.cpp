@@ -76,7 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("Парсер переменных");
+    setWindowTitle(tr("Парсер переменных"));
 
 
     // Меню создаём в коде — так оно гарантированно отображается
@@ -96,8 +96,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Настройка дерева
     ui->tableVariables->setColumnCount(6);
-    ui->tableVariables->setHeaderLabels(QStringList() 
-        << "Выбор" << "Имя переменной" << "Тип" << "Адрес" << "Доступ" << "Комментарий");
+    ui->tableVariables->setHeaderLabels(QStringList()
+        << tr("Выбор")
+        << tr("Имя переменной")
+        << tr("Тип")
+        << tr("Адрес")
+        << tr("Доступ")
+        << tr("Комментарий"));
     ui->tableVariables->header()->setStretchLastSection(true);
     ui->tableVariables->setAlternatingRowColors(true);
     ui->tableVariables->setSortingEnabled(true);
