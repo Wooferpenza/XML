@@ -59,13 +59,13 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-echo [INFO] Найден qmake:
+echo [INFO] Найден qmake: 
 qmake -v
 echo.
 
 REM Генерация Makefile
 echo [INFO] Генерация Makefile...
-call qmake MyQtApp.pro
+call qmake  MyQtApp.pro
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Ошибка при генерации Makefile!
     pause

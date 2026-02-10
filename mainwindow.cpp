@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "qdebug.h"
 #include "ui_mainwindow.h"
 #include <QFileDialog>
 #include <QMessageBox>
@@ -6,6 +7,7 @@
 #include <QHeaderView>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
+#include <QTreeWidgetItemIterator>
 #include <QRegularExpression>
 #include <QDebug>
 #include <QMenuBar>
@@ -14,6 +16,7 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QFontMetrics>
+#include <QDebug>
 
 namespace {
 
@@ -88,8 +91,7 @@ MainWindow::MainWindow(QWidget *parent)
     actionOpen->setShortcut(QKeySequence::Open);
     
     QAction *actionExport = menuFile->addAction(tr("Экспорт в LUA"), this, &MainWindow::onExportFile);
-
-
+    
     menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)->setShortcut(QKeySequence::Quit);
     //сс
     QMenu *menuHelp = menuBar->addMenu(tr("Справка"));
@@ -142,6 +144,19 @@ void MainWindow::onExportFile()
     QString fileName = QFileDialog::getSaveFileName(this,
     tr("Выберите LUA файл"), "Parameters",
     tr("LUA Files (*.lua);;All Files (*)"));
+
+  qDebug() << "123";// ui->tableVariables->itemAt(1,0)->text(1);
+  QTreeWidgetItemIterator iter(ui->tableVariables);
+  while (*iter) {
+  
+  QTreeWidgetItem *item = *iter;
+ 
+  QMessageBox::about(this, tr("О программе"),
+  item->text(1));
+   ++iter;
+}
+
+  //ui->tableVariables->item
 }
 void MainWindow::onExit()
 {
