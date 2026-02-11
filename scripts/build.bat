@@ -78,7 +78,7 @@ echo.
 mingw32-make
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Ошибка при сборке проекта!
-    pause
+    REM pause
     exit /b 1
 )
 

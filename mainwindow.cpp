@@ -1,481 +1,504 @@
 #include "mainwindow.h"
+#include "qcontainerfwd.h"
 #include "qdebug.h"
 #include "ui_mainwindow.h"
-#include <QFileDialog>
-#include <QMessageBox>
+#include <QAction>
+#include <QDebug>
 #include <QFile>
+#include <QFileDialog>
+#include <QFontMetrics>
 #include <QHeaderView>
+#include <QKeySequence>
+#include <QLabel>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QRegularExpression>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QTreeWidgetItemIterator>
-#include <QRegularExpression>
-#include <QDebug>
-#include <QMenuBar>
-#include <QMenu>
-#include <QAction>
-#include <QKeySequence>
-#include <QLabel>
-#include <QFontMetrics>
-#include <QDebug>
+
 
 namespace {
 
 enum { AddressColumn = 3 };
 
-// Ключ для числового сравнения адресов: префикс (D, M, X, HC...), число, подномер (бит)
+// Ключ для числового сравнения адресов: префикс (D, M, X, HC...), число,
+// подномер (бит)
 struct AddressKey {
-    QString prefix;
-    qlonglong num = 0;
-    int bit = -1;
-    bool valid = false;
+  QString prefix;
+  qlonglong num = 0;
+  int bit = -1;
+  bool valid = false;
 };
 
-AddressKey parseAddressKey(const QString &address)
-{
-    AddressKey k;
-    QRegularExpression rx(QStringLiteral("^([A-Za-z]+)(\\d+)(?:\\.(\\d+))?$"));
-    QRegularExpressionMatch m = rx.match(address.trimmed());
-    if (m.hasMatch()) {
-        k.prefix = m.captured(1);
-        k.num = m.captured(2).toLongLong();
-        k.bit = m.captured(3).isEmpty() ? -1 : m.captured(3).toInt();
-        k.valid = true;
-    }
-    return k;
+AddressKey parseAddressKey(const QString &address) {
+  AddressKey k;
+  QRegularExpression rx(QStringLiteral("^([A-Za-z]+)(\\d+)(?:\\.(\\d+))?$"));
+  QRegularExpressionMatch m = rx.match(address.trimmed());
+  if (m.hasMatch()) {
+    k.prefix = m.captured(1);
+    k.num = m.captured(2).toLongLong();
+    k.bit = m.captured(3).isEmpty() ? -1 : m.captured(3).toInt();
+    k.valid = true;
+  }
+  return k;
 }
 
-bool addressLessThan(const QString &a, const QString &b)
-{
-    AddressKey ka = parseAddressKey(a);
-    AddressKey kb = parseAddressKey(b);
-    if (!ka.valid && !kb.valid) return a < b;
-    if (!ka.valid) return true;
-    if (!kb.valid) return false;
-    if (ka.prefix != kb.prefix) return ka.prefix < kb.prefix;
-    if (ka.num != kb.num) return ka.num < kb.num;
-    return ka.bit < kb.bit;
+bool addressLessThan(const QString &a, const QString &b) {
+  AddressKey ka = parseAddressKey(a);
+  AddressKey kb = parseAddressKey(b);
+  if (!ka.valid && !kb.valid)
+    return a < b;
+  if (!ka.valid)
+    return true;
+  if (!kb.valid)
+    return false;
+  if (ka.prefix != kb.prefix)
+    return ka.prefix < kb.prefix;
+  if (ka.num != kb.num)
+    return ka.num < kb.num;
+  return ka.bit < kb.bit;
 }
 
-class VariableTreeWidgetItem : public QTreeWidgetItem
-{
+class VariableTreeWidgetItem : public QTreeWidgetItem {
 public:
-    using QTreeWidgetItem::QTreeWidgetItem;
-    bool operator<(const QTreeWidgetItem &other) const override
-    {
-        const QTreeWidget *tw = treeWidget();
-        if (tw && tw->sortColumn() == AddressColumn) {
-            QString a = text(AddressColumn);
-            QString b = other.text(AddressColumn);
-            return addressLessThan(a, b);
-        }
-        return QTreeWidgetItem::operator<(other);
+  using QTreeWidgetItem::QTreeWidgetItem;
+  bool operator<(const QTreeWidgetItem &other) const override {
+    const QTreeWidget *tw = treeWidget();
+    if (tw && tw->sortColumn() == AddressColumn) {
+      QString a = text(AddressColumn);
+      QString b = other.text(AddressColumn);
+      return addressLessThan(a, b);
     }
+    return QTreeWidgetItem::operator<(other);
+  }
 };
 
 } // namespace
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-{
-    ui->setupUi(this);
-    setWindowTitle(tr("Парсер переменных"));
+    : QMainWindow(parent), ui(new Ui::MainWindow) {
+  ui->setupUi(this);
+  setWindowTitle(tr("Парсер переменных"));
 
+  // Меню создаём в коде — так оно гарантированно отображается
+  QMenuBar *menuBar = new QMenuBar(this);
+  setMenuBar(menuBar);
 
-    // Меню создаём в коде — так оно гарантированно отображается
-    QMenuBar *menuBar = new QMenuBar(this);
-    setMenuBar(menuBar);
+  QMenu *menuFile = menuBar->addMenu(tr("Файл"));
+  QAction *actionOpen =
+      menuFile->addAction(tr("Открыть..."), this, &MainWindow::onSelectFile);
+  actionOpen->setShortcut(QKeySequence::Open);
 
-    QMenu *menuFile = menuBar->addMenu(tr("Файл"));
-    QAction *actionOpen = menuFile->addAction(tr("Открыть..."), this, &MainWindow::onSelectFile);
-    actionOpen->setShortcut(QKeySequence::Open);
-    
-    QAction *actionExport = menuFile->addAction(tr("Экспорт в LUA"), this, &MainWindow::onExportFile);
-    
-    menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)->setShortcut(QKeySequence::Quit);
-    //сс
-    QMenu *menuHelp = menuBar->addMenu(tr("Справка"));
-    menuHelp->addAction(tr("О программе"), this, &MainWindow::onAbout);
+  QAction *actionExport =
+      menuFile->addAction(tr("Экспорт в LUA"), this, &MainWindow::onExportFile);
 
-    // Настройка дерева
-    ui->tableVariables->setColumnCount(6);
-    ui->tableVariables->setHeaderLabels(QStringList()
-        << tr("Выбор")
-        << tr("Имя переменной")
-        << tr("Тип")
-        << tr("Адрес")
-        << tr("Доступ")
-        << tr("Комментарий"));
-    ui->tableVariables->header()->setStretchLastSection(true);
-    ui->tableVariables->setAlternatingRowColors(true);
-    ui->tableVariables->setSortingEnabled(true);
-    ui->tableVariables->setRootIsDecorated(true);
-    {
-        QHeaderView *h = ui->tableVariables->header();
-        int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 32;
-        ui->tableVariables->setColumnWidth(0, w);
-    }
-   
-    // Информация о файле — в статус-бар (постоянно справа)
-    labelStatusFile = new QLabel(tr("Файл не выбран"), this);
-    statusBar()->addPermanentWidget(labelStatusFile);
+  menuFile->addAction(tr("Выход"), this, &MainWindow::onExit)
+      ->setShortcut(QKeySequence::Quit);
+  // сс
+  QMenu *menuHelp = menuBar->addMenu(tr("Справка"));
+  menuHelp->addAction(tr("О программе"), this, &MainWindow::onAbout);
 
-    connect(ui->tableVariables, &QTreeWidget::itemChanged, this, &MainWindow::onVariableItemChanged);
+  // Настройка дерева
+  ui->tableVariables->setColumnCount(6);
+  ui->tableVariables->setHeaderLabels(
+      QStringList() << tr("Выбор") << tr("Имя переменной") << tr("Тип")
+                    << tr("Адрес") << tr("Доступ") << tr("Комментарий"));
+  ui->tableVariables->header()->setStretchLastSection(true);
+  ui->tableVariables->setAlternatingRowColors(true);
+  ui->tableVariables->setSortingEnabled(true);
+  ui->tableVariables->setRootIsDecorated(true);
+  {
+    QHeaderView *h = ui->tableVariables->header();
+    int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 32;
+    ui->tableVariables->setColumnWidth(0, w);
+  }
+
+  // Информация о файле — в статус-бар (постоянно справа)
+  labelStatusFile = new QLabel(tr("Файл не выбран"), this);
+  statusBar()->addPermanentWidget(labelStatusFile);
+
+  connect(ui->tableVariables, &QTreeWidget::itemChanged, this,
+          &MainWindow::onVariableItemChanged);
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
+MainWindow::~MainWindow() { delete ui; }
 
-void MainWindow::onSelectFile()
-{
-    QString fileName = QFileDialog::getOpenFileName(this,
-        tr("Выберите XML файл"), "",
-        tr("XML Files (*.xml);;All Files (*)"));
-    
-    if (!fileName.isEmpty()) {
-        labelStatusFile->setText(tr("Файл: %1").arg(fileName));
-        parseXMLFile(fileName);
-    }
-}
-void MainWindow::onExportFile()
-{
-    QString fileName = QFileDialog::getSaveFileName(this,
-    tr("Выберите LUA файл"), "Parameters",
-    tr("LUA Files (*.lua);;All Files (*)"));
+void MainWindow::onSelectFile() {
+  QString fileName =
+      QFileDialog::getOpenFileName(this, tr("Выберите XML файл"), "",
+                                   tr("XML Files (*.xml);;All Files (*)"));
 
-  qDebug() << "123";// ui->tableVariables->itemAt(1,0)->text(1);
-  QTreeWidgetItemIterator iter(ui->tableVariables);
+  if (!fileName.isEmpty()) {
+    labelStatusFile->setText(tr("Файл: %1").arg(fileName));
+    parseXMLFile(fileName);
+  }
+}
+void MainWindow::onExportFile() {
+  QString fileName =
+      QFileDialog::getSaveFileName(this, tr("Выберите LUA файл"), "Parameters",
+                                   tr("LUA Files (*.lua);;All Files (*)"));
+
+  QTreeWidgetItemIterator iter(ui->tableVariables,
+                               QTreeWidgetItemIterator::Checked);
   while (*iter) {
-  
-  QTreeWidgetItem *item = *iter;
- 
-  QMessageBox::about(this, tr("О программе"),
-  item->text(1));
-   ++iter;
-}
-
-  //ui->tableVariables->item
-}
-void MainWindow::onExit()
-{
-    close();
-}
-
-void MainWindow::onAbout()
-{
-    QMessageBox::about(this, tr("О программе"),
-        tr("<h3>XML Парсер переменных</h3>"
-           "<p>Просмотр переменных из XML-файлов конфигурации (Symbolconfiguration).</p>"
-           "<p>Поддерживаются типы TypeSimple, TypeArray и TypeUserDef.</p>"));
-}
-
-void MainWindow::onVariableItemChanged(QTreeWidgetItem *item, int column)
-{
-    if (column != 0)
-        return;
-    const Qt::CheckState state = item->checkState(0);
-    ui->tableVariables->blockSignals(true);
-    setChildrenCheckState(item, state);
-    ui->tableVariables->blockSignals(false);
-}
-
-void MainWindow::setChildrenCheckState(QTreeWidgetItem *parent, Qt::CheckState state)
-{
-    for (int i = 0; i < parent->childCount(); ++i) {
-        QTreeWidgetItem *child = parent->child(i);
-        child->setCheckState(0, state);
-        setChildrenCheckState(child, state);
-    }
-}
-
-void MainWindow::parseXMLFile(const QString &fileName)
-{
-    variables.clear();
-    
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "Ошибка", 
-            QString("Не удалось открыть файл: %1").arg(fileName));
-        return;
+    QTreeWidgetItem *item = *iter;
+   QString str;
+    if (item->text(2)=="BOOL") {
+      str=QString(  
+"--%1\n\
+%2=\n\ 
+{\n\
+    get=function()\n\
+        local v=""\n\
+        local str=link.ReadBit(%2)\n\
+        for i = 1,#str do\n\
+        v=v..string.format(,string.byte(str,i))                                                   \
+        end                                                                                             \
+        return v                                                                                        \
+                        end,                                                                                            \
+                        set=function(v)                                                                                 \
+                        local str=""                                                                                    \
+                        for i = 1, #v, 2  do                                                                            \
+                        str=str..string.char(tonumber(string.sub(v,i,i+1),16))                                          \
+                        end                                                                                             \
+                        result = link.WriteAscii({PLC}1.HMI_Retain.Parameters.BeginEnd.GasBefore, str, #str)  \
+                        end,                                                                                            \
+                        }                                                                                               \
+                                    ").arg(item->text(5)).arg (item->text(1));   
+   // str << "--" <<  item->text(5) << "\n" << item->text(1) << "=\n{";
     }
     
-    QDomDocument doc;
-    QString errorMsg;
-    int errorLine, errorColumn;
-    
-    // Используем старый API для совместимости
-    if (!doc.setContent(&file, false, &errorMsg, &errorLine, &errorColumn)) {
-        file.close();
-        QMessageBox::warning(this, "Ошибка парсинга XML",
-            QString("Ошибка в строке %1, столбце %2:\n%3")
-                .arg(errorLine).arg(errorColumn).arg(errorMsg));
-        return;
-    }
-    
+
+    QMessageBox::about(this, tr("О программе"), str);
+    ++iter;
+  }
+
+  // ui->tableVariables->item
+}
+void MainWindow::onExit() { close(); }
+
+void MainWindow::onAbout() {
+  QMessageBox::about(
+      this, tr("О программе"),
+      tr("<h3>XML Парсер переменных</h3>"
+         "<p>Просмотр переменных из XML-файлов конфигурации "
+         "(Symbolconfiguration).</p>"
+         "<p>Поддерживаются типы TypeSimple, TypeArray и TypeUserDef.</p>"));
+}
+
+void MainWindow::onVariableItemChanged(QTreeWidgetItem *item, int column) {
+  if (column != 0)
+    return;
+  const Qt::CheckState state = item->checkState(0);
+  ui->tableVariables->blockSignals(true);
+  setChildrenCheckState(item, state);
+  ui->tableVariables->blockSignals(false);
+}
+
+void MainWindow::setChildrenCheckState(QTreeWidgetItem *parent,
+                                       Qt::CheckState state) {
+  for (int i = 0; i < parent->childCount(); ++i) {
+    QTreeWidgetItem *child = parent->child(i);
+    child->setCheckState(0, state);
+    setChildrenCheckState(child, state);
+  }
+}
+
+void MainWindow::parseXMLFile(const QString &fileName) {
+  variables.clear();
+
+  QFile file(fileName);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QMessageBox::warning(this, "Ошибка",
+                         QString("Не удалось открыть файл: %1").arg(fileName));
+    return;
+  }
+
+  QDomDocument doc;
+  QString errorMsg;
+  int errorLine, errorColumn;
+
+  // Используем старый API для совместимости
+  if (!doc.setContent(&file, false, &errorMsg, &errorLine, &errorColumn)) {
     file.close();
-    
-    QDomElement root = doc.documentElement();
-    if (root.tagName() != "Symbolconfiguration") {
-        QMessageBox::warning(this, "Ошибка", 
-            "Неверный формат XML файла. Ожидается корневой элемент 'Symbolconfiguration'");
-        return;
-    }
-    
-    // Сначала парсим TypeList для получения маппинга типов
-    typeMap.clear();
-    userDefTypes.clear();
-    QDomNodeList typeLists = root.elementsByTagName("TypeList");
-    if (!typeLists.isEmpty()) {
-        QDomElement typeList = typeLists.at(0).toElement();
-        parseTypeList(typeList);
-    }
-    
-    // Поиск NodeList
-    QDomNodeList nodeLists = root.elementsByTagName("NodeList");
-    if (nodeLists.isEmpty()) {
-        QMessageBox::information(this, "Информация", 
-            "В файле не найдено NodeList");
-        return;
-    }
-    
-    QDomElement nodeList = nodeLists.at(0).toElement();
-    parseNodeList(nodeList);
-    
-    displayVariables();
-    
-    statusBar()->showMessage(QString("Загружено переменных: %1").arg(variables.size()), 3000);
+    QMessageBox::warning(this, "Ошибка парсинга XML",
+                         QString("Ошибка в строке %1, столбце %2:\n%3")
+                             .arg(errorLine)
+                             .arg(errorColumn)
+                             .arg(errorMsg));
+    return;
+  }
+
+  file.close();
+
+  QDomElement root = doc.documentElement();
+  if (root.tagName() != "Symbolconfiguration") {
+    QMessageBox::warning(this, "Ошибка",
+                         "Неверный формат XML файла. Ожидается корневой "
+                         "элемент 'Symbolconfiguration'");
+    return;
+  }
+
+  // Сначала парсим TypeList для получения маппинга типов
+  typeMap.clear();
+  userDefTypes.clear();
+  QDomNodeList typeLists = root.elementsByTagName("TypeList");
+  if (!typeLists.isEmpty()) {
+    QDomElement typeList = typeLists.at(0).toElement();
+    parseTypeList(typeList);
+  }
+
+  // Поиск NodeList
+  QDomNodeList nodeLists = root.elementsByTagName("NodeList");
+  if (nodeLists.isEmpty()) {
+    QMessageBox::information(this, "Информация", "В файле не найдено NodeList");
+    return;
+  }
+
+  QDomElement nodeList = nodeLists.at(0).toElement();
+  parseNodeList(nodeList);
+
+  displayVariables();
+
+  statusBar()->showMessage(
+      QString("Загружено переменных: %1").arg(variables.size()), 3000);
 }
 
-void MainWindow::parseTypeList(const QDomElement &typeList)
-{
-    QDomNode node = typeList.firstChild();
-    while (!node.isNull()) {
-        if (node.isElement()) {
-            QDomElement element = node.toElement();
-            QString tagName = element.tagName();
-            
-            QString typeName = element.attribute("name");
-            QString iecName = element.attribute("iecname");
-            
-            // Обрабатываем TypeSimple, TypeArray, TypeUserDef
-            if (tagName == "TypeSimple" || tagName == "TypeArray" || tagName == "TypeUserDef") {
-                if (!typeName.isEmpty() && !iecName.isEmpty()) {
-                    typeMap[typeName] = iecName;
-                }
-            }
-            
-            // Дополнительно обрабатываем TypeUserDef для сохранения структуры
-            if (tagName == "TypeUserDef") {
-                QString typeclass = element.attribute("typeclass");
-                if (typeclass == "Userdef") {
-                    TypeUserDefInfo userDefInfo;
-                    userDefInfo.name = typeName;
-                    userDefInfo.iecname = iecName;
-                    userDefInfo.typeclass = typeclass;
-                    
-                    // Парсим UserDefElement
-                    QDomNode childNode = element.firstChild();
-                    while (!childNode.isNull()) {
-                        if (childNode.isElement()) {
-                            QDomElement childElement = childNode.toElement();
-                            if (childElement.tagName() == "UserDefElement") {
-                                UserDefElement elem;
-                                elem.iecname = childElement.attribute("iecname");
-                                elem.type = childElement.attribute("type");
-                                elem.byteoffset = childElement.attribute("byteoffset");
-                                userDefInfo.elements.append(elem);
-                            }
-                        }
-                        childNode = childNode.nextSibling();
-                    }
-                    
-                    if (!typeName.isEmpty()) {
-                        userDefTypes[typeName] = userDefInfo;
-                    }
-                }
-            }
+void MainWindow::parseTypeList(const QDomElement &typeList) {
+  QDomNode node = typeList.firstChild();
+  while (!node.isNull()) {
+    if (node.isElement()) {
+      QDomElement element = node.toElement();
+      QString tagName = element.tagName();
+
+      QString typeName = element.attribute("name");
+      QString iecName = element.attribute("iecname");
+
+      // Обрабатываем TypeSimple, TypeArray, TypeUserDef
+      if (tagName == "TypeSimple" || tagName == "TypeArray" ||
+          tagName == "TypeUserDef") {
+        if (!typeName.isEmpty() && !iecName.isEmpty()) {
+          typeMap[typeName] = iecName;
         }
-        node = node.nextSibling();
+      }
+
+      // Дополнительно обрабатываем TypeUserDef для сохранения структуры
+      if (tagName == "TypeUserDef") {
+        QString typeclass = element.attribute("typeclass");
+        if (typeclass == "Userdef") {
+          TypeUserDefInfo userDefInfo;
+          userDefInfo.name = typeName;
+          userDefInfo.iecname = iecName;
+          userDefInfo.typeclass = typeclass;
+
+          // Парсим UserDefElement
+          QDomNode childNode = element.firstChild();
+          while (!childNode.isNull()) {
+            if (childNode.isElement()) {
+              QDomElement childElement = childNode.toElement();
+              if (childElement.tagName() == "UserDefElement") {
+                UserDefElement elem;
+                elem.iecname = childElement.attribute("iecname");
+                elem.type = childElement.attribute("type");
+                elem.byteoffset = childElement.attribute("byteoffset");
+                userDefInfo.elements.append(elem);
+              }
+            }
+            childNode = childNode.nextSibling();
+          }
+
+          if (!typeName.isEmpty()) {
+            userDefTypes[typeName] = userDefInfo;
+          }
+        }
+      }
     }
+    node = node.nextSibling();
+  }
 }
 
-void MainWindow::parseNodeList(const QDomElement &nodeList)
-{
-    QDomNode node = nodeList.firstChild();
-    while (!node.isNull()) {
-        if (node.isElement()) {
-            QDomElement element = node.toElement();
-            if (element.tagName() == "Node") {
-                parseNode(element);
-            }
-        }
-        node = node.nextSibling();
+void MainWindow::parseNodeList(const QDomElement &nodeList) {
+  QDomNode node = nodeList.firstChild();
+  while (!node.isNull()) {
+    if (node.isElement()) {
+      QDomElement element = node.toElement();
+      if (element.tagName() == "Node") {
+        parseNode(element);
+      }
     }
+    node = node.nextSibling();
+  }
 }
 
-void MainWindow::parseNode(const QDomElement &node, const QString &parentPath)
-{
-    QString nodeName = node.attribute("name");
-    if (nodeName.isEmpty()) {
-        // Пропускаем узлы без имени
-        QDomNode child = node.firstChild();
-        while (!child.isNull()) {
-            if (child.isElement()) {
-                QDomElement childElement = child.toElement();
-                if (childElement.tagName() == "Node") {
-                    parseNode(childElement, parentPath);
-                }
-            }
-            child = child.nextSibling();
-        }
-        return;
-    }
-    
-    QString currentPath = parentPath.isEmpty() ? nodeName : parentPath + "." + nodeName;
-    
-    // Проверяем, является ли это переменной (имеет тип и адрес)
-    QString type = node.attribute("type");
-    QString address = node.attribute("directaddress");
-    
-    if (!type.isEmpty() && !address.isEmpty()) {
-        // Это переменная
-        VariableInfo var;
-        var.name = currentPath;
-        var.typeName = type; // Сохраняем оригинальное имя типа
-        // Получаем iecname из маппинга типов, если он есть
-        var.type = typeMap.contains(type) ? typeMap[type] : type;
-        var.address = address;
-        var.access = node.attribute("access");
-        // Проверяем, является ли тип Userdef
-        var.isUserDef = userDefTypes.contains(type);
-        
-        // Ищем комментарий
-        QDomNode commentNode = node.firstChild();
-        while (!commentNode.isNull()) {
-            if (commentNode.isElement() && commentNode.toElement().tagName() == "Comment") {
-                var.comment = commentNode.toElement().text();
-                break;
-            }
-            commentNode = commentNode.nextSibling();
-        }
-        
-        variables.append(var);
-    }
-    
-    // Рекурсивно обрабатываем дочерние узлы
+void MainWindow::parseNode(const QDomElement &node, const QString &parentPath) {
+  QString nodeName = node.attribute("name");
+  if (nodeName.isEmpty()) {
+    // Пропускаем узлы без имени
     QDomNode child = node.firstChild();
     while (!child.isNull()) {
-        if (child.isElement()) {
-            QDomElement childElement = child.toElement();
-            if (childElement.tagName() == "Node") {
-                parseNode(childElement, currentPath);
-            }
+      if (child.isElement()) {
+        QDomElement childElement = child.toElement();
+        if (childElement.tagName() == "Node") {
+          parseNode(childElement, parentPath);
         }
-        child = child.nextSibling();
+      }
+      child = child.nextSibling();
     }
+    return;
+  }
+
+  QString currentPath =
+      parentPath.isEmpty() ? nodeName : parentPath + "." + nodeName;
+
+  // Проверяем, является ли это переменной (имеет тип и адрес)
+  QString type = node.attribute("type");
+  QString address = node.attribute("directaddress");
+
+  if (!type.isEmpty() && !address.isEmpty()) {
+    // Это переменная
+    VariableInfo var;
+    var.name = currentPath;
+    var.typeName = type; // Сохраняем оригинальное имя типа
+    // Получаем iecname из маппинга типов, если он есть
+    var.type = typeMap.contains(type) ? typeMap[type] : type;
+    var.address = address;
+    var.access = node.attribute("access");
+    // Проверяем, является ли тип Userdef
+    var.isUserDef = userDefTypes.contains(type);
+
+    // Ищем комментарий
+    QDomNode commentNode = node.firstChild();
+    while (!commentNode.isNull()) {
+      if (commentNode.isElement() &&
+          commentNode.toElement().tagName() == "Comment") {
+        var.comment = commentNode.toElement().text();
+        break;
+      }
+      commentNode = commentNode.nextSibling();
+    }
+
+    variables.append(var);
+  }
+
+  // Рекурсивно обрабатываем дочерние узлы
+  QDomNode child = node.firstChild();
+  while (!child.isNull()) {
+    if (child.isElement()) {
+      QDomElement childElement = child.toElement();
+      if (childElement.tagName() == "Node") {
+        parseNode(childElement, currentPath);
+      }
+    }
+    child = child.nextSibling();
+  }
 }
 
-void MainWindow::displayVariables()
-{
-    ui->tableVariables->clear();
-    
-    for (int i = 0; i < variables.size(); ++i) {
-        const VariableInfo &var = variables.at(i);
-        
-        VariableTreeWidgetItem *item = new VariableTreeWidgetItem(ui->tableVariables);
-        item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-        item->setCheckState(0, Qt::Unchecked);
-        item->setText(1, var.name);
-        item->setText(2, var.type);
-        item->setText(3, var.address);
-        item->setText(4, var.access);
-        item->setText(5, var.comment);
-        
-        // Если это Userdef тип, добавляем дочерние элементы
-        if (var.isUserDef && userDefTypes.contains(var.typeName)) {
-            const TypeUserDefInfo &userDefInfo = userDefTypes[var.typeName];
-            addUserDefElements(item, var.name, var.address, userDefInfo);
-            item->setExpanded(false); // По умолчанию свернуто
-        }
+void MainWindow::displayVariables() {
+  ui->tableVariables->clear();
+
+  for (int i = 0; i < variables.size(); ++i) {
+    const VariableInfo &var = variables.at(i);
+
+    VariableTreeWidgetItem *item =
+        new VariableTreeWidgetItem(ui->tableVariables);
+    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+    item->setCheckState(0, Qt::Unchecked);
+    item->setText(1, var.name);
+    item->setText(2, var.type);
+    item->setText(3, var.address);
+    item->setText(4, var.access);
+    item->setText(5, var.comment);
+
+    // Если это Userdef тип, добавляем дочерние элементы
+    if (var.isUserDef && userDefTypes.contains(var.typeName)) {
+      const TypeUserDefInfo &userDefInfo = userDefTypes[var.typeName];
+      addUserDefElements(item, var.name, var.address, userDefInfo);
+      item->setExpanded(false); // По умолчанию свернуто
     }
-    
-    // Столбец 0 — ширина по тексту заголовка «Выбор» + отступ
-    {
-        QHeaderView *h = ui->tableVariables->header();
-        int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 50;
-        ui->tableVariables->setColumnWidth(0, w);
-    }
-    ui->tableVariables->resizeColumnToContents(1);
-    ui->tableVariables->resizeColumnToContents(2);
-    ui->tableVariables->resizeColumnToContents(3);
-    
+  }
+
+  // Столбец 0 — ширина по тексту заголовка «Выбор» + отступ
+  {
+    QHeaderView *h = ui->tableVariables->header();
+    int w = QFontMetrics(h->font()).horizontalAdvance(tr("Выбор")) + 50;
+    ui->tableVariables->setColumnWidth(0, w);
+  }
+  ui->tableVariables->resizeColumnToContents(1);
+  ui->tableVariables->resizeColumnToContents(2);
+  ui->tableVariables->resizeColumnToContents(3);
 }
 
-void MainWindow::addUserDefElements(QTreeWidgetItem *parentItem, const QString &parentName, 
-                                   const QString &parentAddress, const TypeUserDefInfo &userDefInfo)
-{
-    for (const UserDefElement &elem : userDefInfo.elements) {
-        VariableTreeWidgetItem *childItem = new VariableTreeWidgetItem(parentItem);
-        QString elemType = typeMap.contains(elem.type) ? typeMap[elem.type] : elem.type;
-        QString elemTypeName = elem.type; // Оригинальное имя типа для проверки
-        QString elemAddress = parentAddress;
-        QString elemFullName = parentName + "." + elem.iecname;
-        
-        // Вычисляем адрес дочернего элемента (базовый адрес + смещение)
-        if (!elem.byteoffset.isEmpty() && !parentAddress.isEmpty()) {
-            bool ok;
-            int offset = elem.byteoffset.toInt(&ok);
-            if (ok) {
-                QString baseAddr = parentAddress;
-                // Пытаемся извлечь числовую часть адреса
-                // Адреса могут быть вида: D100, M0, X0.2, Y1.3, HC202
-                QRegularExpression rx("^([A-Z]+)(\\d+)(?:\\.(\\d+))?$");
-                QRegularExpressionMatch match = rx.match(baseAddr);
-                if (match.hasMatch()) {
-                    QString prefix = match.captured(1);
-                    QString numPart = match.captured(2);
-                    QString bitPart = match.captured(3);
-                    
-                    bool numOk;
-                    int baseNum = numPart.toInt(&numOk);
-                    if (numOk) {
-                        // Вычисляем новый адрес с учетом смещения
-                        // Смещение в байтах, для D-регистров это обычно 2 байта на регистр
-                        int newNum = baseNum + offset / 2; // Предполагаем, что регистры по 2 байта
-                        if (bitPart.isEmpty()) {
-                            elemAddress = QString("%1%2").arg(prefix).arg(newNum);
-                        } else {
-                            elemAddress = QString("%1%2.%3").arg(prefix).arg(newNum).arg(bitPart);
-                        }
-                    }
-                } else {
-                    // Если не удалось распарсить адрес, оставляем базовый адрес
-                    // Смещение будет показано в комментарии для простых типов
-                    elemAddress = parentAddress;
-                }
-            }
-        }
-        
-        childItem->setFlags(childItem->flags() | Qt::ItemIsUserCheckable);
-        childItem->setCheckState(0, Qt::Unchecked);
-        childItem->setText(1, elemFullName);
-        childItem->setText(2, elemType);
-        childItem->setText(3, elemAddress);
-        childItem->setText(4, parentItem->text(4)); // Наследуем доступ от родителя
-        
-        if (userDefTypes.contains(elemTypeName)) {
-            childItem->setText(5, "");
-            const TypeUserDefInfo &nestedUserDefInfo = userDefTypes[elemTypeName];
-            addUserDefElements(childItem, elemFullName, elemAddress, nestedUserDefInfo);
-            childItem->setExpanded(false);
-        } else {
-            if (!elem.byteoffset.isEmpty()) {
-                //childItem->setText(5, QString("Смещение: %1 байт").arg(elem.byteoffset));
+void MainWindow::addUserDefElements(QTreeWidgetItem *parentItem,
+                                    const QString &parentName,
+                                    const QString &parentAddress,
+                                    const TypeUserDefInfo &userDefInfo) {
+  for (const UserDefElement &elem : userDefInfo.elements) {
+    VariableTreeWidgetItem *childItem = new VariableTreeWidgetItem(parentItem);
+    QString elemType =
+        typeMap.contains(elem.type) ? typeMap[elem.type] : elem.type;
+    QString elemTypeName = elem.type; // Оригинальное имя типа для проверки
+    QString elemAddress = parentAddress;
+    QString elemFullName = parentName + "." + elem.iecname;
+
+    // Вычисляем адрес дочернего элемента (базовый адрес + смещение)
+    if (!elem.byteoffset.isEmpty() && !parentAddress.isEmpty()) {
+      bool ok;
+      int offset = elem.byteoffset.toInt(&ok);
+      if (ok) {
+        QString baseAddr = parentAddress;
+        // Пытаемся извлечь числовую часть адреса
+        // Адреса могут быть вида: D100, M0, X0.2, Y1.3, HC202
+        QRegularExpression rx("^([A-Z]+)(\\d+)(?:\\.(\\d+))?$");
+        QRegularExpressionMatch match = rx.match(baseAddr);
+        if (match.hasMatch()) {
+          QString prefix = match.captured(1);
+          QString numPart = match.captured(2);
+          QString bitPart = match.captured(3);
+
+          bool numOk;
+          int baseNum = numPart.toInt(&numOk);
+          if (numOk) {
+            // Вычисляем новый адрес с учетом смещения
+            // Смещение в байтах, для D-регистров это обычно 2 байта на регистр
+            int newNum =
+                baseNum + offset / 2; // Предполагаем, что регистры по 2 байта
+            if (bitPart.isEmpty()) {
+              elemAddress = QString("%1%2").arg(prefix).arg(newNum);
             } else {
-                childItem->setText(5, "");
+              elemAddress =
+                  QString("%1%2.%3").arg(prefix).arg(newNum).arg(bitPart);
             }
+          }
+        } else {
+          // Если не удалось распарсить адрес, оставляем базовый адрес
+          // Смещение будет показано в комментарии для простых типов
+          elemAddress = parentAddress;
         }
+      }
     }
+
+    childItem->setFlags(childItem->flags() | Qt::ItemIsUserCheckable);
+    childItem->setCheckState(0, Qt::Unchecked);
+    childItem->setText(1, elemFullName);
+    childItem->setText(2, elemType);
+    childItem->setText(3, elemAddress);
+    childItem->setText(4, parentItem->text(4)); // Наследуем доступ от родителя
+
+    if (userDefTypes.contains(elemTypeName)) {
+      childItem->setText(5, "");
+      const TypeUserDefInfo &nestedUserDefInfo = userDefTypes[elemTypeName];
+      addUserDefElements(childItem, elemFullName, elemAddress,
+                         nestedUserDefInfo);
+      childItem->setExpanded(false);
+    } else {
+      if (!elem.byteoffset.isEmpty()) {
+        // childItem->setText(5, QString("Смещение: %1
+        // байт").arg(elem.byteoffset));
+      } else {
+        childItem->setText(5, "");
+      }
+    }
+  }
 }
